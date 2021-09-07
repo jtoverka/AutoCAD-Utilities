@@ -22,6 +22,8 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
+    <DocumentationFile>bin\Debug\ACAD_Utilities.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -33,12 +35,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="accoremgd">
-      <HintPath>..\..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2018\accoremgd.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\accoremgd.dll</HintPath>
     </Reference>
     <Reference Include="acdbmgd">
-      <HintPath>..\..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2018\acdbmgd.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\acdbmgd.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -50,11 +50,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AttributeLibrary.cs" />
+    <Compile Include="BlockReferenceLibrary.cs" />
     <Compile Include="Check.cs" />
+    <Compile Include="Attrib.cs" />
     <Compile Include="Commands.cs" />
+    <Compile Include="GeometricLibrary.cs" />
     <Compile Include="Overkill.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Sort.cs" />
+    <Compile Include="SortEventArgs.cs" />
+    <Compile Include="SortEventHandler.cs" />
+    <Compile Include="Wildcard.cs" />
+    <Compile Include="WorkingDatabaseSwitcher.cs" />
+    <Compile Include="XDataLibrary.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

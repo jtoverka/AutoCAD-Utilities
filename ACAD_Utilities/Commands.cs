@@ -44,6 +44,7 @@ namespace ACAD_Utilities
 		public static ResultBuffer OverkillCommand(ResultBuffer args)
 		{
 			ResultBuffer result = new();
+			_ = args;
 
 			Database database = Application.DocumentManager.MdiActiveDocument.Database;
 			Transaction transaction = database.TransactionManager.StartTransaction();

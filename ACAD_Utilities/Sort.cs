@@ -27,104 +27,342 @@
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Runtime;
 using System.Collections.Generic;
-using System.ComponentModel;
 
 namespace ACAD_Utilities
 {
-	public class Sort : INotifyPropertyChanged
+	/// <summary>
+	/// Represents a container for a database's entities.
+	/// This will sort and partition each entity type.
+	/// </summary>
+	public sealed class Sort
 	{
 		#region Static Fields
 
+		/// <summary>
+		/// The AlignedDimension RXClass object.
+		/// </summary>
 		public static readonly RXClass rxAlignedDimension = RXObject.GetClass(typeof(AlignedDimension));
+		/// <summary>
+		/// The Arc RXClass object.
+		/// </summary>
 		public static readonly RXClass rxArc = RXObject.GetClass(typeof(Arc));
+		/// <summary>
+		/// The ArcDimension RXClass object.
+		/// </summary>
 		public static readonly RXClass rxArcDimension = RXObject.GetClass(typeof(ArcDimension));
+		/// <summary>
+		/// The AttributeDefinition RXClass object.
+		/// </summary>
 		public static readonly RXClass rxAttributeDefinition = RXObject.GetClass(typeof(AttributeDefinition));
+		/// <summary>
+		/// The AttributeReference RXClass object.
+		/// </summary>
 		public static readonly RXClass rxAttributeReference = RXObject.GetClass(typeof(AttributeReference));
+		/// <summary>
+		/// The BlockBegin RXClass object.
+		/// </summary>
 		public static readonly RXClass rxBlockBegin = RXObject.GetClass(typeof(BlockBegin));
+		/// <summary>
+		/// The BlockEnd RXClass object.
+		/// </summary>
 		public static readonly RXClass rxBlockEnd = RXObject.GetClass(typeof(BlockEnd));
+		/// <summary>
+		/// The BlockReference RXClass object.
+		/// </summary>
 		public static readonly RXClass rxBlockReference = RXObject.GetClass(typeof(BlockReference));
+		/// <summary>
+		/// The Body RXClass object.
+		/// </summary>
 		public static readonly RXClass rxBody = RXObject.GetClass(typeof(Body));
+		/// <summary>
+		/// The Circle RXClass object.
+		/// </summary>
 		public static readonly RXClass rxCircle = RXObject.GetClass(typeof(Circle));
+		/// <summary>
+		/// The Curve RXClass object.
+		/// </summary>
 		public static readonly RXClass rxCurve = RXObject.GetClass(typeof(Curve));
+		/// <summary>
+		/// The DBPoint RXClass object.
+		/// </summary>
 		public static readonly RXClass rxDBPoint = RXObject.GetClass(typeof(DBPoint));
+		/// <summary>
+		/// The DBText RXClass object.
+		/// </summary>
 		public static readonly RXClass rxDBText = RXObject.GetClass(typeof(DBText));
+		/// <summary>
+		/// The DetailSymbol RXClass object.
+		/// </summary>
 		public static readonly RXClass rxDetailSymbol = RXObject.GetClass(typeof(DetailSymbol));
+		/// <summary>
+		/// The DgnReference RXClass object.
+		/// </summary>
 		public static readonly RXClass rxDgnReference = RXObject.GetClass(typeof(DgnReference));
+		/// <summary>
+		/// The DiametricDimension RXClass object.
+		/// </summary>
 		public static readonly RXClass rxDiametricDimension = RXObject.GetClass(typeof(DiametricDimension));
+		/// <summary>
+		/// The Dimension RXClass object.
+		/// </summary>
 		public static readonly RXClass rxDimension = RXObject.GetClass(typeof(Dimension));
+		/// <summary>
+		/// The DwfReference RXClass object.
+		/// </summary>
 		public static readonly RXClass rxDwfReference = RXObject.GetClass(typeof(DwfReference));
+		/// <summary>
+		/// The Ellipse RXClass object.
+		/// </summary>
 		public static readonly RXClass rxEllipse = RXObject.GetClass(typeof(Ellipse));
+		/// <summary>
+		/// The Entity RXClass object.
+		/// </summary>
 		public static readonly RXClass rxEntity = RXObject.GetClass(typeof(Entity));
+		/// <summary>
+		/// The Face RXClass object.
+		/// </summary>
 		public static readonly RXClass rxFace = RXObject.GetClass(typeof(Face));
+		/// <summary>
+		/// The FaceRecord RXClass object.
+		/// </summary>
 		public static readonly RXClass rxFaceRecord = RXObject.GetClass(typeof(FaceRecord));
+		/// <summary>
+		/// The FeatureControlFrame RXClass object.
+		/// </summary>
 		public static readonly RXClass rxFeatureControlFrame = RXObject.GetClass(typeof(FeatureControlFrame));
+		/// <summary>
+		/// The GeomapImage RXClass object.
+		/// </summary>
 		public static readonly RXClass rxGeomapImage = RXObject.GetClass(typeof(GeomapImage));
+		/// <summary>
+		/// The GeoPositionMarker RXClass object.
+		/// </summary>
 		public static readonly RXClass rxGeoPositionMarker = RXObject.GetClass(typeof(GeoPositionMarker));
+		/// <summary>
+		/// The Hatch RXClass object.
+		/// </summary>
 		public static readonly RXClass rxHatch = RXObject.GetClass(typeof(Hatch));
+		/// <summary>
+		/// The Image RXClass object.
+		/// </summary>
 		public static readonly RXClass rxImage = RXObject.GetClass(typeof(Image));
+		/// <summary>
+		/// The Leader RXClass object.
+		/// </summary>
 		public static readonly RXClass rxLeader = RXObject.GetClass(typeof(Leader));
+		/// <summary>
+		/// The Light RXClass object.
+		/// </summary>
 		public static readonly RXClass rxLight = RXObject.GetClass(typeof(Light));
+		/// <summary>
+		/// The Line RXClass object.
+		/// </summary>
 		public static readonly RXClass rxLine = RXObject.GetClass(typeof(Line));
+		/// <summary>
+		/// The LineAngularDimension2 RXClass object.
+		/// </summary>
 		public static readonly RXClass rxLineAngularDimension2 = RXObject.GetClass(typeof(LineAngularDimension2));
+		/// <summary>
+		/// The LoftedSurface RXClass object.
+		/// </summary>
 		public static readonly RXClass rxLoftedSurface = RXObject.GetClass(typeof(LoftedSurface));
+		/// <summary>
+		/// The MInsertBlock RXClass object.
+		/// </summary>
 		public static readonly RXClass rxMInsertBlock = RXObject.GetClass(typeof(MInsertBlock));
+		/// <summary>
+		/// The MLeader RXClass object.
+		/// </summary>
 		public static readonly RXClass rxMLeader = RXObject.GetClass(typeof(MLeader));
+		/// <summary>
+		/// The Mline RXClass object.
+		/// </summary>
 		public static readonly RXClass rxMline = RXObject.GetClass(typeof(Mline));
+		/// <summary>
+		/// The MText RXClass object.
+		/// </summary>
 		public static readonly RXClass rxMText = RXObject.GetClass(typeof(MText));
+		/// <summary>
+		/// The Ole2Frame RXClass object.
+		/// </summary>
 		public static readonly RXClass rxOle2Frame = RXObject.GetClass(typeof(Ole2Frame));
+		/// <summary>
+		/// The PdfReference RXClass object.
+		/// </summary>
 		public static readonly RXClass rxPdfReference = RXObject.GetClass(typeof(PdfReference));
+		/// <summary>
+		/// The PlaneSurface RXClass object.
+		/// </summary>
 		public static readonly RXClass rxPlaneSurface = RXObject.GetClass(typeof(PlaneSurface));
+		/// <summary>
+		/// The Point3AngularDimension RXClass object.
+		/// </summary>
 		public static readonly RXClass rxPoint3AngularDimension = RXObject.GetClass(typeof(Point3AngularDimension));
+		/// <summary>
+		/// The PointCloud RXClass object.
+		/// </summary>
 		public static readonly RXClass rxPointCloud = RXObject.GetClass(typeof(PointCloud));
+		/// <summary>
+		/// The PointCloudEx RXClass object.
+		/// </summary>
 		public static readonly RXClass rxPointCloudEx = RXObject.GetClass(typeof(PointCloudEx));
+		/// <summary>
+		/// The PolyFaceMesh RXClass object.
+		/// </summary>
 		public static readonly RXClass rxPolyFaceMesh = RXObject.GetClass(typeof(PolyFaceMesh));
+		/// <summary>
+		/// The PolyFaceMeshVertex RXClass object.
+		/// </summary>
 		public static readonly RXClass rxPolyFaceMeshVertex = RXObject.GetClass(typeof(PolyFaceMeshVertex));
+		/// <summary>
+		/// The PolygonMesh RXClass object.
+		/// </summary>
 		public static readonly RXClass rxPolygonMesh = RXObject.GetClass(typeof(PolygonMesh));
+		/// <summary>
+		/// The PolygonMeshVertex RXClass object.
+		/// </summary>
 		public static readonly RXClass rxPolygonMeshVertex = RXObject.GetClass(typeof(PolygonMeshVertex));
+		/// <summary>
+		/// The Polyline RXClass object.
+		/// </summary>
 		public static readonly RXClass rxPolyline = RXObject.GetClass(typeof(Polyline));
+		/// <summary>
+		/// The Polyline2d RXClass object.
+		/// </summary>
 		public static readonly RXClass rxPolyline2d = RXObject.GetClass(typeof(Polyline2d));
+		/// <summary>
+		/// The Polyline3d RXClass object.
+		/// </summary>
 		public static readonly RXClass rxPolyline3d = RXObject.GetClass(typeof(Polyline3d));
+		/// <summary>
+		/// The PolylineVertex3d RXClass object.
+		/// </summary>
 		public static readonly RXClass rxPolylineVertex3d = RXObject.GetClass(typeof(PolylineVertex3d));
+		/// <summary>
+		/// The ProxyEntity RXClass object.
+		/// </summary>
 		public static readonly RXClass rxProxyEntity = RXObject.GetClass(typeof(ProxyEntity));
+		/// <summary>
+		/// The RadialDimension RXClass object.
+		/// </summary>
 		public static readonly RXClass rxRadialDimension = RXObject.GetClass(typeof(RadialDimension));
+		/// <summary>
+		/// The RadialDimensionLarge RXClass object.
+		/// </summary>
 		public static readonly RXClass rxRadialDimensionLarge = RXObject.GetClass(typeof(RadialDimensionLarge));
+		/// <summary>
+		/// The Ray RXClass object.
+		/// </summary>
 		public static readonly RXClass rxRay = RXObject.GetClass(typeof(Ray));
+		/// <summary>
+		/// The RasterImage RXClass object.
+		/// </summary>
 		public static readonly RXClass rxRasterImage = RXObject.GetClass(typeof(RasterImage));
+		/// <summary>
+		/// The Region RXClass object.
+		/// </summary>
 		public static readonly RXClass rxRegion = RXObject.GetClass(typeof(Region));
+		/// <summary>
+		/// The RotatedDimension RXClass object.
+		/// </summary>
 		public static readonly RXClass rxRotatedDimension = RXObject.GetClass(typeof(RotatedDimension));
+		/// <summary>
+		/// The Section RXClass object.
+		/// </summary>
 		public static readonly RXClass rxSection = RXObject.GetClass(typeof(Section));
+		/// <summary>
+		/// The SectionSymbol RXClass object.
+		/// </summary>
 		public static readonly RXClass rxSectionSymbol = RXObject.GetClass(typeof(SectionSymbol));
+		/// <summary>
+		/// The SequenceEnd RXClass object.
+		/// </summary>
 		public static readonly RXClass rxSequenceEnd = RXObject.GetClass(typeof(SequenceEnd));
+		/// <summary>
+		/// The Shape RXClass object.
+		/// </summary>
 		public static readonly RXClass rxShape = RXObject.GetClass(typeof(Shape));
+		/// <summary>
+		/// The Solid RXClass object.
+		/// </summary>
 		public static readonly RXClass rxSolid = RXObject.GetClass(typeof(Solid));
+		/// <summary>
+		/// The Solid3d RXClass object.
+		/// </summary>
 		public static readonly RXClass rxSolid3d = RXObject.GetClass(typeof(Solid3d));
+		/// <summary>
+		/// The SubDMesh RXClass object.
+		/// </summary>
 		public static readonly RXClass rxSubDMesh = RXObject.GetClass(typeof(SubDMesh));
+		/// <summary>
+		/// The Surface RXClass object.
+		/// </summary>
 		public static readonly RXClass rxSurface = RXObject.GetClass(typeof(Surface));
+		/// <summary>
+		/// The Spline RXClass object.
+		/// </summary>
 		public static readonly RXClass rxSpline = RXObject.GetClass(typeof(Spline));
+		/// <summary>
+		/// The SweptSurface RXClass object.
+		/// </summary>
 		public static readonly RXClass rxSweptSurface = RXObject.GetClass(typeof(SweptSurface));
+		/// <summary>
+		/// The Table RXClass object.
+		/// </summary>
 		public static readonly RXClass rxTable = RXObject.GetClass(typeof(Table));
+		/// <summary>
+		/// The UnderlayReference RXClass object.
+		/// </summary>
 		public static readonly RXClass rxUnderlayReference = RXObject.GetClass(typeof(UnderlayReference));
+		/// <summary>
+		/// The Vertex RXClass object.
+		/// </summary>
 		public static readonly RXClass rxVertex = RXObject.GetClass(typeof(Vertex));
+		/// <summary>
+		/// The Vertex2d RXClass object.
+		/// </summary>
 		public static readonly RXClass rxVertex2d = RXObject.GetClass(typeof(Vertex2d));
+		/// <summary>
+		/// The ViewBorder RXClass object.
+		/// </summary>
 		public static readonly RXClass rxViewBorder = RXObject.GetClass(typeof(ViewBorder));
+		/// <summary>
+		/// The Viewport RXClass object.
+		/// </summary>
 		public static readonly RXClass rxViewport = RXObject.GetClass(typeof(Viewport));
+		/// <summary>
+		/// The ViewRepBlockReference RXClass object.
+		/// </summary>
 		public static readonly RXClass rxViewRepBlockReference = RXObject.GetClass(typeof(ViewRepBlockReference));
+		/// <summary>
+		/// The Wipeout RXClass object.
+		/// </summary>
 		public static readonly RXClass rxWipeout = RXObject.GetClass(typeof(Wipeout));
+		/// <summary>
+		/// The Xline RXClass object.
+		/// </summary>
 		public static readonly RXClass rxXline = RXObject.GetClass(typeof(Xline));
 
 		#endregion
 
+		#region Instance Fields
+
+		private readonly Dictionary<RXClass, HashSet<ObjectId>> entitiesField;
+
+		#endregion
+
 		#region Instance Properties
-		
-		/// <summary>
-		/// Gets the database this object is tied to.
-		/// </summary>
-		public Database Database { get; }
 
 		/// <summary>
-		/// Gets the entities sorted by type.
+		/// Gets or sets the value associated with the specified key.
 		/// </summary>
-		public Dictionary<RXClass, HashSet<ObjectId>> Entities { get; } = new();
+		/// <param name="class">The key of the value to get or set.</param>
+		/// <returns></returns>
+		public HashSet<ObjectId> this[RXClass @class]
+		{
+			get { return entitiesField[@class]; }
+			set { entitiesField[@class] = value; }
+		}
 
 		#endregion
 
@@ -140,36 +378,54 @@ namespace ACAD_Utilities
 			database.Validate(true);
 			transaction.Validate(true);
 
-			Database = database;
+			entitiesField = new();
 
 			database.ObjectAppended += Database_ObjectAppended;
 			database.ObjectErased += Database_ObjectErased;
 			database.ObjectUnappended += Database_ObjectUnappended;
 			database.ObjectReappended += Database_ObjectReappended;
 
+			ObjectIdCollection spaces = new();
+
+			using BlockTable blockTable = transaction.GetObject(database.BlockTableId, OpenMode.ForRead) as BlockTable;
+			spaces.Add(blockTable[BlockTableRecord.ModelSpace]);
+
 			// Get Layout dictionary
 			using DBDictionary layouts = transaction.GetObject(database.LayoutDictionaryId, OpenMode.ForRead) as DBDictionary;
 
 			// Iterate through the layouts
-			foreach (DBDictionaryEntry layout in layouts)
+			foreach (DBDictionaryEntry layoutEntry in layouts)
 			{
-				// Get ObjectId
-				ObjectId layoutId = layout.Value;
-
-				// Validate ObjectId
+				ObjectId layoutId = layoutEntry.Value;
+				
 				if (!layoutId.Validate(false))
 					continue;
 
 				// Get the layout
-				using BlockTableRecord space = transaction.GetObject(layoutId, OpenMode.ForRead) as BlockTableRecord;
-
-				// Iterate through the entities in each layout
-				foreach (ObjectId entityId in space)
-				{
-					// Put each entity type into it's respective buckets.
-					AddId(Entities, entityId);
-				}
+				using Layout layout = transaction.GetObject(layoutId, OpenMode.ForRead) as Layout;
+				spaces.Add(layout.BlockTableRecordId);
 			}
+
+			// Iterate through the entities in each layout
+			foreach (ObjectId spaceId in spaces)
+			{
+				using BlockTableRecord space = transaction.GetObject(spaceId, OpenMode.ForRead) as BlockTableRecord;
+
+				// Put each entity type into it's respective buckets.
+				foreach (ObjectId entityId in space)
+					AddId(entitiesField, entityId);
+			}
+		}
+
+		/// <summary>
+		/// Create a new instance of this class.
+		/// </summary>
+		/// <param name="entities"></param>
+		public Sort(HashSet<ObjectId> entities)
+		{
+			// Put each entity type into it's respective buckets.
+			foreach (ObjectId id in entities)
+				AddId(entitiesField, id);
 		}
 
 		#endregion
@@ -600,23 +856,35 @@ namespace ACAD_Utilities
 		#region Instance Methods
 
 		/// <summary>
-		/// Invoke property change event.
+		/// 
 		/// </summary>
-		/// <param name="sender">The object that invoked the event.</param>
-		/// <param name="e">The property that changed.</param>
-		protected void OnPropertyChanged(object sender, PropertyChangedEventArgs e)
-		{
-			PropertyChanged?.Invoke(sender, e);
-		}
+		/// <param name="class"></param>
+		/// <returns></returns>
+		public bool ContainsKey(RXClass @class) => entitiesField.ContainsKey(@class);
 
 		#endregion
 
 		#region Delegates, Events, Handlers
 
 		/// <summary>
-		/// Invoked on property changed.
+		/// Invoked on a new object being appended to the database.
 		/// </summary>
-		public event PropertyChangedEventHandler PropertyChanged;
+		public event SortEventHandler ObjectAppended;
+
+		/// <summary>
+		/// Invoked on an object being erased from the database.
+		/// </summary>
+		public event SortEventHandler ObjectErased;
+
+		/// <summary>
+		/// Invoked on an object being unappended from the database.
+		/// </summary>
+		public event SortEventHandler ObjectUnappended;
+
+		/// <summary>
+		/// Invoked on an object being reappended to the database.
+		/// </summary>
+		public event SortEventHandler ObjectReappended;
 
 		/// <summary>
 		/// Database object appended handler to keep the dictionary fresh
@@ -626,7 +894,8 @@ namespace ACAD_Utilities
 		private void Database_ObjectAppended(object sender, ObjectEventArgs e)
 		{
 			ObjectId id = e.DBObject.ObjectId;
-			AddId(Entities, id);
+			AddId(entitiesField, id);
+			ObjectAppended?.Invoke(this, new(id));
 		}
 
 		/// <summary>
@@ -637,7 +906,8 @@ namespace ACAD_Utilities
 		private void Database_ObjectErased(object sender, ObjectErasedEventArgs e)
 		{
 			ObjectId id = e.DBObject.ObjectId;
-			RemoveId(Entities, id);
+			RemoveId(entitiesField, id);
+			ObjectErased?.Invoke(this, new(id));
 		}
 
 		/// <summary>
@@ -648,7 +918,8 @@ namespace ACAD_Utilities
 		private void Database_ObjectUnappended(object sender, ObjectEventArgs e)
 		{
 			ObjectId id = e.DBObject.ObjectId;
-			RemoveId(Entities, id);
+			RemoveId(entitiesField, id);
+			ObjectUnappended?.Invoke(this, new(id));
 		}
 
 		/// <summary>
@@ -659,7 +930,8 @@ namespace ACAD_Utilities
 		private void Database_ObjectReappended(object sender, ObjectEventArgs e)
 		{
 			ObjectId id = e.DBObject.ObjectId;
-			AddId(Entities, id);
+			AddId(entitiesField, id);
+			ObjectReappended?.Invoke(this, new(id));
 		}
 
 		#endregion
