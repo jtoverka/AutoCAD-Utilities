@@ -129,8 +129,11 @@ namespace ACADE_Utilities
 				aeSortField[value] = new();
 			}
 
-			SortBlockReferences(sortField[Sort.rxBlockReference]);
-			SortLines(sortField[Sort.rxLine]);
+			if (sortField.ContainsKey(Sort.rxBlockReference))
+				SortBlockReferences(sortField[Sort.rxBlockReference]);
+
+			if (sortField.ContainsKey(Sort.rxLine))
+				SortLines(sortField[Sort.rxLine]);
 		}
 
 		/// <summary>
@@ -158,8 +161,11 @@ namespace ACADE_Utilities
 				aeSortField[value] = new();
 			}
 
-			SortBlockReferences(sortField[Sort.rxBlockReference]);
-			SortLines(sortField[Sort.rxLine]);
+			if (sortField.ContainsKey(Sort.rxBlockReference))
+				SortBlockReferences(sortField[Sort.rxBlockReference]);
+
+			if (sortField.ContainsKey(Sort.rxLine))
+				SortLines(sortField[Sort.rxLine]);
 		}
 
 		#endregion
