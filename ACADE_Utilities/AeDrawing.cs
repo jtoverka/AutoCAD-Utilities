@@ -30,7 +30,6 @@ using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 
 namespace ACADE_Utilities
 {
@@ -39,6 +38,12 @@ namespace ACADE_Utilities
 	/// </summary>
 	public class AeDrawing
 	{
+		#region Static fields
+
+		private static readonly Dictionary<Database, AeDrawing> drawingDatabases = new();
+
+		#endregion
+		
 		#region Fields
 
 		private readonly Dictionary<ObjectId, Dictionary<string, Attrib>> blockAttributes = new();
@@ -47,6 +52,7 @@ namespace ACADE_Utilities
 		private readonly Dictionary<ObjectId, AeObject> aeReSortField = new();
 		private readonly Sort sortField;
 		private readonly Transaction transactionField;
+		private readonly IList<AeLadder> aeLadders = new List<AeLadder>();
 
 		#endregion
 
@@ -80,9 +86,16 @@ namespace ACADE_Utilities
 		}
 
 		/// <summary>
-		/// Gets the wire diagram ladder collection.
+		/// Gets the list of Wire number ladders for this drawing.
 		/// </summary>
-		public HashSet<AeLadder> AeLadders { get; } = new();
+		public IList<AeLadder> AeLadders
+		{ 
+			get 
+			{
+				RefreshAeLadders();
+				return aeLadders; 
+			} 
+		}
 
 		#endregion
 
@@ -97,14 +110,14 @@ namespace ACADE_Utilities
 		/// <exception cref="NullReferenceException"/>
 		/// <exception cref="InvalidOperationException"/>
 		/// <exception cref="ObjectDisposedException"/>
-		public AeDrawing(Transaction transaction, Database database)
+		private AeDrawing(Transaction transaction, Database database)
 		{
 			transaction.Validate(true);
 			database.Validate(true);
 
 			transactionField = transaction;
 
-			sortField = new(transaction, database);
+			sortField = Sort.GetSort(transaction, database);
 
 			sortField.ObjectAppended += SortField_ObjectAppended;
 			sortField.ObjectErased += SortField_ObjectErased;
@@ -128,7 +141,7 @@ namespace ACADE_Utilities
 		/// <exception cref="ArgumentNullException"/>
 		/// <exception cref="NullReferenceException"/>
 		/// <exception cref="ObjectDisposedException"/>
-		public AeDrawing(Transaction transaction, Sort drawing)
+		private AeDrawing(Transaction transaction, Sort drawing)
 		{
 			transaction.Validate(true);
 			transactionField = transaction;
@@ -151,6 +164,42 @@ namespace ACADE_Utilities
 
 		#endregion
 
+		#region Static Methods
+
+		/// <summary>
+		/// Get the AeDrawing equivalent to a drawing Database.
+		/// </summary>
+		/// <param name="transaction">The transaction to perform operations.</param>
+		/// <param name="database">The drawing database.</param>
+		/// <returns>The AeDrawing.</returns>
+		public static AeDrawing GetOrCreate(Transaction transaction, Database database)
+		{
+			database.Validate(true, true);
+
+			if (!drawingDatabases.ContainsKey(database))
+				drawingDatabases[database] = new(transaction, database);
+
+			return drawingDatabases[database];
+		}
+
+		/// <summary>
+		/// Get the AeDrawing equivalent to a drawing Database.
+		/// </summary>
+		/// <param name="transaction">the transaction to perform operations.</param>
+		/// <param name="drawing">The drawing database.</param>
+		/// <returns>The AeDrawing.</returns>
+		public static AeDrawing GetOrCreate(Transaction transaction, Sort drawing)
+		{
+			transaction.Validate(true, true);
+
+			if (!drawingDatabases.ContainsKey(drawing.Database))
+				drawingDatabases[drawing.Database] = new(transaction, drawing);
+
+			return drawingDatabases[drawing.Database];
+		}
+
+		#endregion
+		
 		#region Methods
 
 		/// <summary>
@@ -171,6 +220,18 @@ namespace ACADE_Utilities
 		public bool ContainsKey(AeObject aeObject)
 		{
 			return aeSortField.ContainsKey(aeObject);
+		}
+
+		/// <summary>
+		/// Insert circuit into drawing.
+		/// </summary>
+		/// <param name="circuit">The circuit to add.</param>
+		/// <param name="spaceId">The space to add circuit.</param>
+		/// <param name="point">The point in space to add circuit.</param>
+		public void Insert(AeCircuit circuit, ObjectId spaceId, Point3d point)
+		{
+			RefreshAeLadders();
+			circuit.AutoInsertCircuit(spaceId, point, aeLadders);
 		}
 
 		/// <summary>
@@ -275,6 +336,41 @@ namespace ACADE_Utilities
 		}
 
 		/// <summary>
+		/// Searches the drawing for wire number ladders.
+		/// </summary>
+		private void RefreshAeLadders()
+		{
+			if (!transactionField.Validate(false, false))
+				return;
+
+			aeLadders.Clear();
+
+			HashSet<ObjectId> wdms = aeSortField[AeObject.WD_M];
+			ObjectId wdmId = ObjectId.Null;
+			foreach (ObjectId id in wdms)
+			{
+				if (id.Validate(false))
+				{
+					wdmId = id;
+					break;
+				}
+			}
+
+			if (wdmId == ObjectId.Null)
+				return;
+
+			HashSet<ObjectId> mlrs = aeSortField[AeObject.WD_MLR];
+			foreach (ObjectId id in mlrs)
+			{
+				if (id.Validate(false))
+				{
+					AeLadder aeLadder = new(transactionField, wdmId, id);
+					aeLadders.Add(aeLadder);
+				}
+			}
+		}
+
+		/// <summary>
 		/// Removes the ObjectId from the sortation record.
 		/// </summary>
 		/// <param name="id">The ObjectId to remove from the record.</param>
@@ -335,6 +431,5 @@ namespace ACADE_Utilities
 		private void SortField_ObjectUnappended(object sender, SortEventArgs e) => RemoveObject(e.ObjectId);
 
 		#endregion
-
 	}
 }

@@ -38,6 +38,8 @@ namespace ACAD_Utilities
 	{
 		#region Static Fields
 
+		private static readonly Dictionary<Database, Sort> SortDictionary = new();
+
 		/// <summary>
 		/// The AlignedDimension RXClass object.
 		/// </summary>
@@ -364,6 +366,11 @@ namespace ACAD_Utilities
 			set { entitiesField[@class] = value; }
 		}
 
+		/// <summary>
+		/// Gets the database this object sorts.
+		/// </summary>
+		public Database Database { get; }
+
 		#endregion
 
 		#region Constructor
@@ -373,12 +380,13 @@ namespace ACAD_Utilities
 		/// </summary>
 		/// <param name="transaction"></param>
 		/// <param name="database"></param>
-		public Sort(Transaction transaction, Database database)
+		private Sort(Transaction transaction, Database database)
 		{
 			database.Validate(true);
 			transaction.Validate(true);
 
 			entitiesField = new();
+			Database = database;
 
 			database.ObjectAppended += Database_ObjectAppended;
 			database.ObjectErased += Database_ObjectErased;
@@ -851,15 +859,33 @@ namespace ACAD_Utilities
 				entities[entityId.ObjectClass].Remove(entityId);
 		}
 
+		/// <summary>
+		/// Gets the sorted database object
+		/// </summary>
+		/// <param name="transaction">The transaction to perform operations.</param>
+		/// <param name="database">The database to sort.</param>
+		/// <returns></returns>
+		public static Sort GetSort(Transaction transaction, Database database)
+		{
+			database.Validate(true, true);
+			transaction.Validate(true, true);
+
+			if (!SortDictionary.ContainsKey(database))
+				SortDictionary[database] = new(transaction, database);
+
+			return SortDictionary[database];
+		}
 		#endregion
 
 		#region Instance Methods
 
 		/// <summary>
-		/// 
+		/// Determines whether the Dictioanry contains the specified key. />
+		/// contains the specified key.
 		/// </summary>
 		/// <param name="class"></param>
-		/// <returns></returns>
+		/// <returns><c>true</c> if the Dictionary contains an element with the specified key; otherwise, <c>false</c>.</returns>
+		/// <exception cref="System.ArgumentNullException"/>
 		public bool ContainsKey(RXClass @class) => entitiesField.ContainsKey(@class);
 
 		#endregion

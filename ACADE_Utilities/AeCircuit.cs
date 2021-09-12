@@ -110,11 +110,6 @@ namespace ACADE_Utilities
         /// </summary>
         public Dictionary<string, Dictionary<string, Attrib>> BlockKeys { get; set; } = null;
 
-        /// <summary>
-        /// Gets the ladders in the drawing.
-        /// </summary>
-        public List<AeLadder> AeLadders { get; } = new();
-
         #endregion
 
         #region Constructors
@@ -123,7 +118,7 @@ namespace ACADE_Utilities
         /// Initializes a new instance of this class.
         /// </summary>
         /// <param name="transaction">The transaction to perform operations.</param>
-        /// <param name="blockId">The block reference circuit.</param>
+        /// <param name="blockId">The block table record circuit.</param>
         public AeCircuit(Transaction transaction, ObjectId blockId)
         {
             this.transaction = transaction;
@@ -241,7 +236,7 @@ namespace ACADE_Utilities
         /// Prompt the user to insert the circuit.
         /// </summary>
         /// <returns>A collection of ObjectIds of the exploded inserted circuit.</returns>
-        public ObjectIdCollection ManualInsertCircuit()
+        public ObjectIdCollection ManualInsertCircuit(IList<AeLadder> aeLadders)
         {
             Document document = Application.DocumentManager.MdiActiveDocument;
             Editor editor = document.Editor;
@@ -256,7 +251,7 @@ namespace ACADE_Utilities
             if (result.Status != PromptStatus.OK)
                 return new ObjectIdCollection();
 
-            UpdateWireNo(document.Database.CurrentSpaceId);
+            UpdateWireNo(document.Database.CurrentSpaceId, aeLadders);
             UpdateLinkTerms();
 
             using BlockTableRecord space = transaction.GetObject(document.Database.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
@@ -282,12 +277,13 @@ namespace ACADE_Utilities
         /// <summary>
         /// Insert the circuit at the specified point.
         /// </summary>
-        /// <param name="spaceId">The circuit block reference to insert.</param>
+        /// <param name="spaceId">The space to insert the circuit.</param>
         /// <param name="point">The point to insert the circuit.</param>
+        /// <param name="aeLadders">The list of wire number ladders in the drawing.</param>
         /// <returns></returns>
-        public ObjectIdCollection AutoInsertCircuit(ObjectId spaceId, Point3d point)
+        public ObjectIdCollection AutoInsertCircuit(ObjectId spaceId, Point3d point, IList<AeLadder> aeLadders)
         {
-            if (spaceId.IsErased || spaceId.IsNull || !spaceId.IsValid)
+            if (!spaceId.Validate(false) || !transaction.Validate(false,false))
                 return new ObjectIdCollection();
 
             using BlockTableRecord space = transaction.GetObject(spaceId, OpenMode.ForWrite) as BlockTableRecord;
@@ -301,7 +297,7 @@ namespace ACADE_Utilities
 
             UpdateCircuitKeys();
             UpdateLinkTerms();
-            UpdateWireNo(spaceId);
+            UpdateWireNo(spaceId, aeLadders);
 
             space.AppendEntity(BlockReference);
             transaction.AddNewlyCreatedDBObject(BlockReference, true);
@@ -324,8 +320,9 @@ namespace ACADE_Utilities
         /// <summary>
         /// Update all of the wire numbers in the circuit.
         /// </summary>
-        /// <param name="space"></param>
-        public void UpdateWireNo(ObjectId space)
+        /// <param name="space">The space to get wire number ladders from.</param>
+        /// <param name="aeLadders">The list of wire number ladders.</param>
+        public void UpdateWireNo(ObjectId space, IList<AeLadder> aeLadders)
         {
             if (!space.Validate(false))
                 return;
@@ -342,7 +339,7 @@ namespace ACADE_Utilities
                 AeLadder aeLadder = null;
                 double? priority = null;
                 double? maxPriority = null;
-				foreach (AeLadder ladder in AeLadders)
+				foreach (AeLadder ladder in aeLadders)
 				{
                     ladder.Refresh();
                     priority = ladder.GetPriority(point.Add(attribute.Position.GetAsVector()));
@@ -596,15 +593,10 @@ namespace ACADE_Utilities
                     BlockKeys = blockKeys,
                 };
 
-				foreach (AeLadder ladder in ladders)
-				{
-                    circuit.AeLadders.Add(ladder);
-				}
-
                 if (insertionPoint.HasValue)
-                    newObjectsIds = circuit.AutoInsertCircuit(blockSpaceId, insertionPoint.Value);
+                    newObjectsIds = circuit.AutoInsertCircuit(blockSpaceId, insertionPoint.Value, ladders);
                 else
-                    newObjectsIds = circuit.ManualInsertCircuit();
+                    newObjectsIds = circuit.ManualInsertCircuit(ladders);
 
                 using BlockTableRecord block = transaction.GetObject(blockId, OpenMode.ForWrite) as BlockTableRecord;
                 block.Erase();

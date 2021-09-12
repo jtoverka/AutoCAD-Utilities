@@ -85,8 +85,20 @@ namespace ACADE_Utilities
 		protected override bool Update()
 		{
 			circuit.BlockReference.Position = dragPoint;
-			
-			circuit.UpdateWireNo(spaceId);
+
+			try
+			{
+				Database database = spaceId.Database;
+				Transaction transaction = database.TransactionManager.StartTransaction();
+
+				AeDrawing drawing = AeDrawing.GetOrCreate(transaction, database);
+				circuit.UpdateWireNo(spaceId, drawing.AeLadders);
+			}
+			catch (System.Exception)
+			{
+
+				throw;
+			}
 
 			return true;
 		}

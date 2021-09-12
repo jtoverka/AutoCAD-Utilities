@@ -137,7 +137,7 @@ namespace ACADE_Utilities
 			database.Validate(true);
 
 			transactionField = transaction;
-			aeDrawing = new(transaction, database);
+			aeDrawing = AeDrawing.GetOrCreate(transaction, database);
 		}
 
 		/// <summary>

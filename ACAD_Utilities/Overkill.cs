@@ -265,7 +265,7 @@ namespace ACAD_Utilities
 			databaseField = database;
 			transactionField = transaction;
 
-			sortField = new(transaction, database);
+			sortField = Sort.GetSort(transaction, database);
 		}
 
 		#endregion
