@@ -605,7 +605,7 @@ namespace ACADE_Utilities
 
 			ObjectIdCollection newObjectsIds = new();
 
-			using LayerTable layerTable = (LayerTable)transaction.GetObject(database.LayerTableId, OpenMode.ForRead);
+			using LayerTable layerTable = transaction.GetObject(database.LayerTableId, OpenMode.ForRead) as LayerTable;
 			database.Clayer = layerTable["0"];
 
 			//If fileName does exist...

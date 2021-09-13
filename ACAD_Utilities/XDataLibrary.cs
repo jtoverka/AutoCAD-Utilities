@@ -31,7 +31,7 @@ using System.Collections.Generic;
 namespace ACAD_Utilities
 {
     /// <summary>
-    /// 
+    /// Provides extended methods to work with XData.
     /// </summary>
     public static class XDataLibrary
     {

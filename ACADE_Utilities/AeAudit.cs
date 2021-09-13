@@ -125,8 +125,8 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Initialize a new instance of this class.
 		/// </summary>
-		/// <param name="transaction"></param>
-		/// <param name="database"></param>
+		/// <param name="transaction">The transaction to perform operations.</param>
+		/// <param name="database">The database to do an electrical audit.</param>
 		/// <exception cref="ArgumentNullException"/>
 		/// <exception cref="NullReferenceException"/>
 		/// <exception cref="InvalidOperationException"/>
@@ -143,8 +143,8 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Initialize a new instance of this class.
 		/// </summary>
-		/// <param name="transaction"></param>
-		/// <param name="aeDrawing"></param>
+		/// <param name="transaction">The transaction to perform operations.</param>
+		/// <param name="aeDrawing">The drawing to do an electrical audit.</param>
 		/// <exception cref="ArgumentNullException"/>
 		/// <exception cref="NullReferenceException"/>
 		/// <exception cref="ObjectDisposedException"/>

@@ -160,12 +160,12 @@ namespace ACAD_Utilities
         }
 
         /// <summary>
-        /// Compares a point and a line, and decides if it is within the tolorance allowed
+        /// Determines if a point is on or near the line with a specified tolerance.
         /// </summary>
-        /// <param name="point"></param>
-        /// <param name="line"></param>
-        /// <param name="tolorance"></param>
-        /// <returns></returns>
+        /// <param name="point">The point to check.</param>
+        /// <param name="line">The two points that determines a line to check.</param>
+        /// <param name="tolerance">The allowable distance between the point and the nearest point on the line.</param>
+        /// <returns><c>true</c> if the point in on or near the line within a specified tolerance; otherwise <c>false</c>.</returns>
         public static bool LineMember(Point3d point, Tuple<Point3d, Point3d> line, double tolorance)
         {
             double x0 = point.X;
@@ -207,46 +207,46 @@ namespace ACAD_Utilities
         }
 
         /// <summary>
-        /// 
+        /// Determines if a point is on or near the line with a specified tolerance.
         /// </summary>
-        /// <param name="point"></param>
-        /// <param name="line"></param>
-        /// <param name="tolerance"></param>
-        /// <returns></returns>
+        /// <param name="point">The point to check.</param>
+        /// <param name="line">The line to check.</param>
+        /// <param name="tolerance">The allowable distance between the point and the nearest point on the line.</param>
+        /// <returns><c>true</c> if the point in on or near the line within a specified tolerance; otherwise <c>false</c>.</returns>
         public static bool LineMember(Point3d point, Line line, double tolerance)
         {
             return LineMember(point, new Tuple<Point3d, Point3d>(line.StartPoint, line.EndPoint), tolerance);
         }
 
         /// <summary>
-        /// Determines if two wires are networked based on a distance tolerance
+        /// Determines if two wires are networked based on a distance tolerance.
         /// </summary>
-        /// <param name="wire1"></param>
-        /// <param name="wire2"></param>
-        /// <param name="tol"></param>
-        /// <returns></returns>
-        public static double WireNet(Tuple<Point3d, Point3d> wire1, Tuple<Point3d, Point3d> wire2, double tol)
+        /// <param name="wire1">The first wire to compare.</param>
+        /// <param name="wire2">The second wire to compare.</param>
+        /// <param name="tolerance">The allowable distance between the end of the wire and another wire.</param>
+        /// <returns>byte flags indicating the matches made.</returns>
+        public static byte WireNet(Tuple<Point3d, Point3d> wire1, Tuple<Point3d, Point3d> wire2, double tolerance)
         {
-            double result = 0;
+            byte result = 0;
 
-            if (LineMember(wire1.Item1, wire2, tol)) { result += 1; }
-            if (LineMember(wire1.Item2, wire2, tol)) { result += 2; }
-            if (LineMember(wire2.Item1, wire1, tol)) { result += 4; }
-            if (LineMember(wire2.Item2, wire1, tol)) { result += 8; }
+            if (LineMember(wire1.Item1, wire2, tolerance)) { result += 1; }
+            if (LineMember(wire1.Item2, wire2, tolerance)) { result += 2; }
+            if (LineMember(wire2.Item1, wire1, tolerance)) { result += 4; }
+            if (LineMember(wire2.Item2, wire1, tolerance)) { result += 8; }
 
             return result;
         }
 
         /// <summary>
-        /// 
+        /// Determines if two wires are networked based on a distance tolerance.
         /// </summary>
-        /// <param name="wire1"></param>
-        /// <param name="wire2"></param>
-        /// <param name="tol"></param>
-        /// <returns></returns>
-        public static double WireNet(Line wire1, Line wire2, double tol)
+        /// <param name="wire1">The first wire to compare.</param>
+        /// <param name="wire2">The second wire to compare.</param>
+        /// <param name="tolerance">The allowable distance between the end of the wire and another wire.</param>
+        /// <returns>byte flags indicating the matches made.</returns>
+        public static byte WireNet(Line wire1, Line wire2, double tolerance)
         {
-            return WireNet(new Tuple<Point3d, Point3d>(wire1.StartPoint, wire1.EndPoint), new Tuple<Point3d, Point3d>(wire2.StartPoint, wire2.EndPoint), tol);
+            return WireNet(new Tuple<Point3d, Point3d>(wire1.StartPoint, wire1.EndPoint), new Tuple<Point3d, Point3d>(wire2.StartPoint, wire2.EndPoint), tolerance);
         }
 
         /// <summary>

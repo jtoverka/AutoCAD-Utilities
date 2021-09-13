@@ -49,7 +49,7 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Initialize a new instance of this class.
 		/// </summary>
-		/// <param name="circuit"></param>
+		/// <param name="circuit">The circuit to insert.</param>
 		public CircuitJig(AeCircuit circuit) : base(circuit.BlockReference)
 		{
 			this.circuit = circuit;
@@ -63,8 +63,8 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Controls the sampling of user input.
 		/// </summary>
-		/// <param name="prompts"></param>
-		/// <returns></returns>
+		/// <param name="prompts">User prompts.</param>
+		/// <returns>The status of the sample.</returns>
 		protected override SamplerStatus Sampler(JigPrompts prompts)
 		{
 			var options = new JigPromptPointOptions("\nSpecify insertion point: ")
@@ -89,16 +89,14 @@ namespace ACADE_Utilities
 			try
 			{
 				Database database = spaceId.Database;
-				Transaction transaction = database.TransactionManager.StartTransaction();
+				using Transaction transaction = database.TransactionManager.StartTransaction();
 
 				AeDrawing drawing = AeDrawing.GetOrCreate(transaction, database);
 				circuit.UpdateWireNo(spaceId, drawing.AeLadders);
-			}
-			catch (System.Exception)
-			{
 
-				throw;
+				transaction.Commit();
 			}
+			catch { }
 
 			return true;
 		}
