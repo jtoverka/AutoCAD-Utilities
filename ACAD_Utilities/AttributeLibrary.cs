@@ -55,7 +55,7 @@ namespace ACAD_Utilities
                 AttributeCollection collection = blockReference.AttributeCollection;
                 foreach (ObjectId id in collection)
                 {
-                    AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
+                    using AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
                     string tag = attribute.Tag;
                     string textstring = attribute.TextString;
                     attributes[tag] = new Attrib(1000, textstring);
@@ -108,7 +108,7 @@ namespace ACAD_Utilities
                 AttributeCollection collection = blockReference.AttributeCollection;
                 foreach (ObjectId id in collection)
                 {
-                    AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
+                    using AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
                     string tag = attribute.Tag;
                     string textstring = attribute.TextString;
                     attributes[tag] = new(new(1000, textstring), id);
@@ -185,11 +185,9 @@ namespace ACAD_Utilities
                 {
                     foreach (ObjectId id in collection)
                     {
-                        AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
-                        using (attribute)
-                        {
-                            attribute.AdjustAlignment(database);
-                        }
+                        using AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
+
+                        attribute.AdjustAlignment(database);
                     }
 
                     return;
@@ -198,18 +196,16 @@ namespace ACAD_Utilities
                 // input attribute value, adjust alignment
                 foreach (ObjectId id in collection)
                 {
-                    AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
-                    using (attribute)
+                    using AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
+
+                    if (attributes.ContainsKey(attribute.Tag))
                     {
-                        if (attributes.ContainsKey(attribute.Tag))
-                        {
-                            overflowAttributes.Remove(attribute.Tag);
+                        overflowAttributes.Remove(attribute.Tag);
 
-                            attribute.TextString = attributes[attribute.Tag].Text;
-                        }
-
-                        attribute.AdjustAlignment(database);
+                        attribute.TextString = attributes[attribute.Tag].Text;
                     }
+
+                    attribute.AdjustAlignment(database);
                 }
             }
 
@@ -255,11 +251,9 @@ namespace ACAD_Utilities
                 {
                     foreach (ObjectId id in collection)
                     {
-                        AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
-                        using (attribute)
-                        {
-                            attribute.AdjustAlignment(database);
-                        }
+                        using AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
+
+                        attribute.AdjustAlignment(database);
                     }
 
                     return;
@@ -269,17 +263,15 @@ namespace ACAD_Utilities
                 foreach (ObjectId id in collection)
                 {
                     AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
-                    using (attribute)
+
+                    if (attributes.ContainsKey(attribute.Tag))
                     {
-                        if (attributes.ContainsKey(attribute.Tag))
-                        {
-                            overflowAttributes.Remove(attribute.Tag);
+                        overflowAttributes.Remove(attribute.Tag);
 
-                            attribute.TextString = attributes[attribute.Tag].Item1.Text;
-                        }
-
-                        attribute.AdjustAlignment(database);
+                        attribute.TextString = attributes[attribute.Tag].Item1.Text;
                     }
+
+                    attribute.AdjustAlignment(database);
                 }
             }
 

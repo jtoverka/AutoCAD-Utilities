@@ -52,8 +52,6 @@ namespace ACADE_Utilities
 		private static readonly Regex blockTag = new("TAG");
 		private static readonly Regex sigCode = new("^SIGCODE");
 
-		private readonly Transaction transaction;
-
 		// Find and replace sub blocks if key $BLOCKREPLACE$ is found
 		private readonly HashSet<ObjectId> blocks = new();
 
@@ -125,8 +123,6 @@ namespace ACADE_Utilities
 		/// <param name="blockId">The block table record circuit.</param>
 		public AeCircuit(Transaction transaction, ObjectId blockId)
 		{
-			this.transaction = transaction;
-
 			blockId.Validate(RXClass.GetClass(typeof(BlockTableRecord)), true);
 			using BlockTableRecord block = transaction.GetObject(blockId, OpenMode.ForRead) as BlockTableRecord;
 			BlockReference = new BlockReference(Point3d.Origin, blockId);
@@ -224,7 +220,7 @@ namespace ACADE_Utilities
 			// Try and find connections to wireno blocks
 			foreach (ObjectId id in terminalAttributes)
 			{
-				ObjectId WireNoId = FindWireNoAttribute(id);
+				ObjectId WireNoId = FindWireNoAttribute(transaction, id);
 
 				if (WireNoId.IsNull)
 					continue;
@@ -243,8 +239,10 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Prompt the user to insert the circuit.
 		/// </summary>
+		/// <param name="transaction">The database transaction to perform operations.</param>
+		/// <param name="aeLadders">The ladder blocks.</param>
 		/// <returns>A collection of ObjectIds of the exploded inserted circuit.</returns>
-		public ObjectIdCollection ManualInsertCircuit(IList<AeLadder> aeLadders)
+		public ObjectIdCollection ManualInsertCircuit(Transaction transaction, IList<AeLadder> aeLadders)
 		{
 			Document document = Application.DocumentManager.MdiActiveDocument;
 			Editor editor = document.Editor;
@@ -252,15 +250,15 @@ namespace ACADE_Utilities
 			BlockReference.Position = Point3d.Origin;
 			CircuitJig jig = new(this);
 			
-			UpdateCircuitKeys();
+			UpdateCircuitKeys(transaction);
 
 			PromptResult result = editor.Drag(jig);
 
 			if (result.Status != PromptStatus.OK)
 				return new ObjectIdCollection();
 
-			UpdateWireNo(document.Database.CurrentSpaceId, aeLadders);
-			UpdateLinkTerms();
+			UpdateWireNo(transaction, document.Database.CurrentSpaceId, aeLadders);
+			UpdateLinkTerms(transaction);
 
 			using BlockTableRecord space = transaction.GetObject(document.Database.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
 			
@@ -285,11 +283,12 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Insert the circuit at the specified point.
 		/// </summary>
+		/// <param name="transaction">The database transaction to perform operations.</param>
 		/// <param name="spaceId">The space to insert the circuit.</param>
 		/// <param name="point">The point to insert the circuit.</param>
 		/// <param name="aeLadders">The list of wire number ladders in the drawing.</param>
 		/// <returns></returns>
-		public ObjectIdCollection AutoInsertCircuit(ObjectId spaceId, Point3d point, IList<AeLadder> aeLadders)
+		public ObjectIdCollection AutoInsertCircuit(Transaction transaction, ObjectId spaceId, Point3d point, IList<AeLadder> aeLadders)
 		{
 			if (!spaceId.Validate(false) || !transaction.Validate(false,false))
 				return new ObjectIdCollection();
@@ -303,9 +302,9 @@ namespace ACADE_Utilities
 
 			BlockReference.Position = point;
 
-			UpdateCircuitKeys();
-			UpdateLinkTerms();
-			UpdateWireNo(spaceId, aeLadders);
+			UpdateCircuitKeys(transaction);
+			UpdateLinkTerms(transaction);
+			UpdateWireNo(transaction, spaceId, aeLadders);
 
 			space.AppendEntity(BlockReference);
 			transaction.AddNewlyCreatedDBObject(BlockReference, true);
@@ -328,9 +327,10 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Update all of the wire numbers in the circuit.
 		/// </summary>
+		/// <param name="transaction">The database transaction to perform operations.</param>
 		/// <param name="space">The space to get wire number ladders from.</param>
 		/// <param name="aeLadders">The list of wire number ladders.</param>
-		public void UpdateWireNo(ObjectId space, IList<AeLadder> aeLadders)
+		public void UpdateWireNo(Transaction transaction, ObjectId space, IList<AeLadder> aeLadders)
 		{
 			if (!space.Validate(false))
 				return;
@@ -384,7 +384,8 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Update the circuit values.
 		/// </summary>
-		public void UpdateCircuitKeys()
+		/// <param name="transaction">The database transaction to perform operations.</param>
+		public void UpdateCircuitKeys(Transaction transaction)
 		{
 			if (AttributeKeys == null || BlockKeys == null)
 				return;
@@ -494,7 +495,7 @@ namespace ACADE_Utilities
 
 					circuit.AttributeKeys = AttributeKeys;
 					circuit.BlockKeys = BlockKeys;
-					circuit.UpdateCircuitKeys();
+					circuit.UpdateCircuitKeys(transaction);
 				}
 			}
 		}
@@ -502,7 +503,8 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Update all of the terminals with fresh linkterm values.
 		/// </summary>
-		public void UpdateLinkTerms()
+		/// <param name="transaction">The database transaction to perform operations.</param>
+		public void UpdateLinkTerms(Transaction transaction)
 		{
 			Dictionary<string, Attrib> attributes = new();
 			foreach (ObjectId id in linkTermCollection)
@@ -529,7 +531,13 @@ namespace ACADE_Utilities
 			text.AdjustAlignment(database);
 		}
 
-		private ObjectId FindWireNoAttribute(ObjectId attributeId)
+		/// <summary>
+		/// Find The WIRENO attribute in a block.
+		/// </summary>
+		/// <param name="transaction">The database transaction to perform operations.</param>
+		/// <param name="attributeId">The attribute in a block with a WIRENO attribute.</param>
+		/// <returns></returns>
+		private ObjectId FindWireNoAttribute(Transaction transaction, ObjectId attributeId)
 		{
 			using AttributeReference attribute = transaction.GetObject(attributeId, OpenMode.ForRead) as AttributeReference;
 			
@@ -542,7 +550,7 @@ namespace ACADE_Utilities
 					if (!(terminal.IsMatch(item.Key) && item.Value.Item2.HasValue))
 						continue;
 
-					ObjectId id = FindWireNoAttribute(item.Value.Item2.Value);
+					ObjectId id = FindWireNoAttribute(transaction, item.Value.Item2.Value);
 					
 					if (!id.IsNull)
 						return id;
@@ -626,9 +634,9 @@ namespace ACADE_Utilities
 				};
 
 				if (insertionPoint.HasValue)
-					newObjectsIds = circuit.AutoInsertCircuit(blockSpaceId, insertionPoint.Value, ladders);
+					newObjectsIds = circuit.AutoInsertCircuit(transaction, blockSpaceId, insertionPoint.Value, ladders);
 				else
-					newObjectsIds = circuit.ManualInsertCircuit(ladders);
+					newObjectsIds = circuit.ManualInsertCircuit(transaction, ladders);
 
 				using BlockTableRecord block = transaction.GetObject(blockId, OpenMode.ForWrite) as BlockTableRecord;
 				block.Erase();

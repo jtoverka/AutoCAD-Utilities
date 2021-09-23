@@ -166,7 +166,7 @@ namespace ACAD_Utilities
         /// <param name="line">The two points that determines a line to check.</param>
         /// <param name="tolerance">The allowable distance between the point and the nearest point on the line.</param>
         /// <returns><c>true</c> if the point in on or near the line within a specified tolerance; otherwise <c>false</c>.</returns>
-        public static bool LineMember(Point3d point, Tuple<Point3d, Point3d> line, double tolorance)
+        public static bool LineMember(Point3d point, Tuple<Point3d, Point3d> line, double tolerance)
         {
             double x0 = point.X;
             double y0 = point.Y;
@@ -203,7 +203,7 @@ namespace ACAD_Utilities
             distanceToEndpoint1 = Math.Sqrt(Math.Pow((x1 - x0), 2) + Math.Pow((y1 - y0), 2));
             distanceToEndpoint2 = Math.Sqrt(Math.Pow((x2 - x0), 2) + Math.Pow((y2 - y0), 2));
 
-            return ((distanceToEndpoint1 <= tolorance) || (distanceToEndpoint2 <= tolorance) || (distanceToLine <= tolorance));
+            return ((distanceToEndpoint1 <= tolerance) || (distanceToEndpoint2 <= tolerance) || (distanceToLine <= tolerance));
         }
 
         /// <summary>

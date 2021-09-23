@@ -450,10 +450,6 @@ namespace ACAD_Utilities
 			if (!entityId.Validate(false))
 				return;
 
-			// Check to see if it really is an entity
-			if (entityId.ObjectClass.GetRuntimeType() != typeof(Entity))
-				return;
-
 			// Create a generic container if one does not exist
 			if (!entities.ContainsKey(rxEntity))
 				entities[rxEntity] = new();

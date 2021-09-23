@@ -52,7 +52,7 @@ namespace ACAD_Utilities
         /// <exception cref="Exception" />
         public static BlockReference InsertBlock(this Transaction transaction, ObjectId blockSpaceId, Point3d insertPoint, string blockname, Dictionary<string, Attrib> attributes = null, double xScale = 1, double yScale = 1, double zScale = 1, double rotate = 0)
         {
-            using Database database = blockSpaceId.Database;
+            Database database = blockSpaceId.Database;
             BlockReference blockReference = null;
 
             // Block Space can be a Layout like Model space, or Paper space as well as a block definition.
@@ -81,9 +81,12 @@ namespace ACAD_Utilities
                 // Write attribute data to block reference
                 blockReference.SetAttributes(transaction, attributes);
             }
-            else
+			else
+			{
+                blockReference?.Dispose();
                 throw new Exception($"block '{blockname}' does not exist");
-
+            }
+            
             return blockReference;
         }
         /// <summary>

@@ -24,6 +24,7 @@
 *For more information, please refer to <https://unlicense.org>
 */
 
+using ACAD_Utilities;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
@@ -38,8 +39,8 @@ namespace ACADE_Utilities
 	{
 		#region Fields
 
-		private Point3d dragPoint;
-		private readonly AeCircuit circuit;
+		private Point3d dragPoint = new();
+		private readonly AeCircuit circuit = null;
 		private ObjectId spaceId;
 
 		#endregion
@@ -81,22 +82,42 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Update the circuit view.
 		/// </summary>
-		/// <returns>Always returns <c>true</c>.</returns>
+		/// <returns><c>true</c> if the update is successful; otherwise, false.</returns>
 		protected override bool Update()
 		{
+			if (circuit?.BlockReference == null)
+				return false;
+
+			if (!spaceId.Validate(false))
+				return false;
+
 			circuit.BlockReference.Position = dragPoint;
+
+			Database database = spaceId.Database;
+			TransactionManager manager = database.TransactionManager;
+			Transaction transaction = null;
+			bool started = false;
 
 			try
 			{
-				Database database = spaceId.Database;
-				using Transaction transaction = database.TransactionManager.StartTransaction();
+				if (manager.TopTransaction != null)
+					transaction = manager.TopTransaction;
+				else
+					started = true;
+
+				if (started)
+					transaction = manager.StartTransaction();
 
 				AeDrawing drawing = AeDrawing.GetOrCreate(transaction, database);
-				circuit.UpdateWireNo(spaceId, drawing.AeLadders);
+				circuit.UpdateWireNo(transaction, spaceId, drawing.AeLadders);
 
-				transaction.Commit();
+				if (started)
+					transaction.Commit();
 			}
 			catch { }
+
+			if (started && transaction != null)
+				transaction.Dispose();
 
 			return true;
 		}

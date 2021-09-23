@@ -79,7 +79,7 @@ namespace ACAD_Utilities
         {
             // Make sure the block reference is able to be written
             entity.UpgradeOpen();
-            using Database database = entity.Database;
+            Database database = entity.Database;
 
             // The attributes that have not been output yet will be written to the block reference as XData
             using ResultBuffer buffer = new();
@@ -138,31 +138,28 @@ namespace ACAD_Utilities
                 buffer.Add(new TypedValue(1002, "}"));
             }
 
-            using (buffer)
-            {
-                entity.XData = buffer;
-            }
+            entity.XData = buffer;
         }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="tr"></param>
+        /// <param name="transaction"></param>
         /// <param name="db"></param>
         /// <param name="name"></param>
-        public static void AddRegAppTableRecord(Transaction tr, Database db, string name)
+        public static void AddRegAppTableRecord(Transaction transaction, Database db, string name)
         {
-            var rat = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForRead);
+            using RegAppTable regAppTable = transaction.GetObject(db.RegAppTableId, OpenMode.ForRead) as RegAppTable;
 
-            if (!rat.Has(name))
+            if (!regAppTable.Has(name))
             {
-                rat.UpgradeOpen();
-                RegAppTableRecord ratr = new()
+                regAppTable.UpgradeOpen();
+                using RegAppTableRecord regAppTableRecord = new()
 				{
 					Name = name
 				};
-				rat.Add(ratr);
-                tr.AddNewlyCreatedDBObject(ratr, true);
+				regAppTable.Add(regAppTableRecord);
+                transaction.AddNewlyCreatedDBObject(regAppTableRecord, true);
             }
         }
     }
