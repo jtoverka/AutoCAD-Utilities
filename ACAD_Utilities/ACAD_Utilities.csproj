@@ -63,6 +63,7 @@
     <Compile Include="Sort.cs" />
     <Compile Include="SortEventArgs.cs" />
     <Compile Include="SortEventHandler.cs" />
+    <Compile Include="TransactionExtensions.cs" />
     <Compile Include="Wildcard.cs" />
     <Compile Include="WorkingDatabaseSwitcher.cs" />
     <Compile Include="XDataLibrary.cs" />

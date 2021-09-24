@@ -43,9 +43,11 @@ namespace ACADE_Utilities
 		private static readonly Dictionary<Database, AeDrawing> drawingDatabases = new();
 
 		#endregion
-		
+
 		#region Fields
 
+		private readonly HashSet<ObjectId> lineIds = new();
+		private readonly HashSet<ObjectId> blockReferenceIds = new();
 		private readonly Dictionary<ObjectId, Dictionary<string, Attrib>> blockAttributes = new();
 		private readonly Database database = null;
 		private readonly Dictionary<AeObject, HashSet<ObjectId>> aeSortField = new();
@@ -94,26 +96,21 @@ namespace ACADE_Utilities
 				if (!database.Validate(false))
 					return aeLadders;
 
-				Transaction transaction = null;
-				bool started = false;
-				if (database?.TransactionManager?.TopTransaction != null)
-					transaction = database.TransactionManager.TopTransaction;
-				else
-					started = true;
-
-				if (started)
-					transaction = database.TransactionManager.StartTransaction();
+				bool started = database.GetOrStartTransaction(out Transaction transaction);
 
 				if (!transaction.Validate(false))
 					return aeLadders;
 
-				RefreshAeLadders(transaction);
+				RefreshAeDrawing(transaction);
 
 				if (started)
+				{
+					transaction.Abort();
 					transaction.Dispose();
+				}
 
 				return aeLadders; 
-			} 
+			}
 		}
 
 		#endregion
@@ -254,7 +251,7 @@ namespace ACADE_Utilities
 		/// <param name="point">The point in space to add circuit.</param>
 		public void Insert(AeCircuit circuit, Transaction transaction, ObjectId spaceId, Point3d point)
 		{
-			RefreshAeLadders(transaction);
+			RefreshAeDrawing(transaction);
 			circuit.AutoInsertCircuit(transaction, spaceId, point, aeLadders);
 		}
 
@@ -277,6 +274,7 @@ namespace ACADE_Utilities
 					aeReSortField[blockId] = new();
 
 				using BlockReference blockReference = transaction.GetObject(blockId, OpenMode.ForRead) as BlockReference;
+
 				blockAttributes[blockId] = blockReference.GetAttributes(transaction);
 
 				if (blockReference.GetEffectiveName().Equals("WDDOT", StringComparison.OrdinalIgnoreCase))
@@ -333,14 +331,19 @@ namespace ACADE_Utilities
 			if (wdmId.IsNull)
 				return;
 
-			if (!blockAttributes[wdmId].ContainsKey("WIRE_LAYS"))
+			if (!blockAttributes.ContainsKey(wdmId))
 				return;
 
-			string[] layers = blockAttributes[wdmId]["WIRE_LAYS"].Text.Split(',');
+			Dictionary<string, Attrib> attributes = blockAttributes[wdmId];
+
+			if (!attributes.ContainsKey("WIRE_LAYS"))
+				return;
+
+			string[] layers = attributes["WIRE_LAYS"].Text.Split(',');
 			Wildcard[] wildcards = new Wildcard[layers.Length];
 			for (int i = 0; i < wildcards.Length; i++)
 			{
-				wildcards[i] = new(layers[i]);
+				wildcards[i] = new(layers[i].Trim());
 			}
 
 			foreach (ObjectId lineId in lineIds)
@@ -365,10 +368,16 @@ namespace ACADE_Utilities
 		/// Searches the drawing for wire number ladders.
 		/// </summary>
 		/// <param name="transaction">The database transaction used to perform operations.</param>
-		private void RefreshAeLadders(Transaction transaction)
+		private void RefreshAeDrawing(Transaction transaction)
 		{
 			if (!transaction.Validate(false, false))
 				return;
+
+			SortLines(lineIds, transaction);
+			lineIds.Clear();
+
+			SortBlockReferences(blockReferenceIds, transaction);
+			blockReferenceIds.Clear();
 
 			aeLadders.Clear();
 
@@ -406,6 +415,11 @@ namespace ACADE_Utilities
 			if (!aeReSortField.ContainsKey(id))
 				return;
 
+			if (id.ObjectClass == Sort.rxLine)
+				lineIds.Remove(id);
+			if (id.ObjectClass == Sort.rxBlockReference)
+				blockReferenceIds.Remove(id);
+
 			aeSortField[aeReSortField[id]].Remove(id);
 			aeReSortField.Remove(id);
 		}
@@ -413,35 +427,16 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Adds the objectId to the sortation record.
 		/// </summary>
-		/// <param name="id">The ObjectId to add to the record.</param>
+		/// <param name="id">The (re)appended object to add to the record.</param>
 		private void AddObject(ObjectId id)
 		{
-			HashSet<ObjectId> ids = new();
-			ids.Add(id);
-
-			if (!database.Validate(false))
-				return;
-
-			Transaction transaction = null;
-			bool started = false;
-			if (database?.TransactionManager?.TopTransaction != null)
-				transaction = database.TransactionManager.TopTransaction;
-			else
-				started = true;
-
-			if (started)
-				transaction = database.TransactionManager.StartTransaction();
-
-			if (!transaction.Validate(false))
+			if (!id.Validate(false))
 				return;
 
 			if (id.ObjectClass == Sort.rxLine)
-				SortLines(ids, transaction);
-			else if (id.ObjectClass == Sort.rxBlockReference)
-				SortBlockReferences(ids, transaction);
-
-			if (started)
-				transaction.Dispose();
+				lineIds.Add(id);
+			if (id.ObjectClass == Sort.rxBlockReference)
+				blockReferenceIds.Add(id);
 		}
 
 		#endregion

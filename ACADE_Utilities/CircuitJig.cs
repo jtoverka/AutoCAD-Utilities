@@ -94,20 +94,13 @@ namespace ACADE_Utilities
 			circuit.BlockReference.Position = dragPoint;
 
 			Database database = spaceId.Database;
-			TransactionManager manager = database.TransactionManager;
-			Transaction transaction = null;
-			bool started = false;
+			if (!database.Validate(false, false))
+				return false;
+
+			bool started = database.GetOrStartTransaction(out Transaction transaction);
 
 			try
 			{
-				if (manager.TopTransaction != null)
-					transaction = manager.TopTransaction;
-				else
-					started = true;
-
-				if (started)
-					transaction = manager.StartTransaction();
-
 				AeDrawing drawing = AeDrawing.GetOrCreate(transaction, database);
 				circuit.UpdateWireNo(transaction, spaceId, drawing.AeLadders);
 
@@ -116,8 +109,8 @@ namespace ACADE_Utilities
 			}
 			catch { }
 
-			if (started && transaction != null)
-				transaction.Dispose();
+			if (started)
+				transaction?.Dispose();
 
 			return true;
 		}

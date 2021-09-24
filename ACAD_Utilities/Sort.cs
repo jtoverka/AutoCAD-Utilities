@@ -425,17 +425,6 @@ namespace ACAD_Utilities
 			}
 		}
 
-		/// <summary>
-		/// Create a new instance of this class.
-		/// </summary>
-		/// <param name="entities"></param>
-		public Sort(HashSet<ObjectId> entities)
-		{
-			// Put each entity type into it's respective buckets.
-			foreach (ObjectId id in entities)
-				AddId(entitiesField, id);
-		}
-
 		#endregion
 
 		#region Static Methods
@@ -450,395 +439,22 @@ namespace ACAD_Utilities
 			if (!entityId.Validate(false))
 				return;
 
+			RXClass objectClass = entityId.ObjectClass;
+
+			if (objectClass == null)
+				return;
+
 			// Create a generic container if one does not exist
 			if (!entities.ContainsKey(rxEntity))
 				entities[rxEntity] = new();
 
 			// Create a specific container if one does not exist
-			if (!entities.ContainsKey(entityId.ObjectClass))
-				entities[entityId.ObjectClass] = new();
+			if (!entities.ContainsKey(objectClass))
+				entities[objectClass] = new();
 
-			// Put each entity type into it's respective buckets.
-			if (entityId.ObjectClass == rxAlignedDimension)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxAlignedDimension].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxArc)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxArc].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxArcDimension)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxArcDimension].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxAttributeDefinition)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxAttributeDefinition].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxAttributeReference)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxAttributeReference].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxBlockBegin)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxBlockBegin].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxBlockEnd)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxBlockEnd].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxBlockReference)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxBlockReference].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxBody)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxBody].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxCircle)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxCircle].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxCurve)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxCurve].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxDBPoint)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxDBPoint].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxDBText)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxDBText].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxDetailSymbol)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxDetailSymbol].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxDgnReference)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxDgnReference].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxDiametricDimension)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxDiametricDimension].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxDimension)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxDimension].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxDwfReference)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxDwfReference].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxEllipse)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxEllipse].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxEntity)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxEntity].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxFace)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxFace].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxFaceRecord)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxFaceRecord].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxFeatureControlFrame)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxFeatureControlFrame].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxGeomapImage)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxGeomapImage].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxGeoPositionMarker)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxGeoPositionMarker].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxHatch)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxHatch].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxImage)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxImage].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxLeader)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxLeader].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxLight)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxLight].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxLine)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxLine].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxLineAngularDimension2)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxLineAngularDimension2].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxLoftedSurface)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxLoftedSurface].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxMInsertBlock)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxMInsertBlock].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxMLeader)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxMLeader].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxMline)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxMline].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxMText)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxMText].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxOle2Frame)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxOle2Frame].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxPdfReference)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxPdfReference].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxPlaneSurface)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxPlaneSurface].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxPoint3AngularDimension)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxPoint3AngularDimension].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxPointCloud)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxPointCloud].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxPointCloudEx)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxPointCloudEx].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxPolyFaceMesh)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxPolyFaceMesh].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxPolyFaceMeshVertex)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxPolyFaceMeshVertex].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxPolygonMesh)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxPolygonMesh].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxPolygonMeshVertex)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxPolygonMeshVertex].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxPolyline)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxPolyline].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxPolyline2d)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxPolyline2d].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxPolyline3d)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxPolyline3d].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxPolylineVertex3d)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxPolylineVertex3d].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxProxyEntity)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxProxyEntity].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxRadialDimension)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxRadialDimension].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxRadialDimensionLarge)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxRadialDimensionLarge].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxRay)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxRay].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxRasterImage)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxRasterImage].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxRegion)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxRegion].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxRotatedDimension)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxRotatedDimension].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxSection)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxSection].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxSectionSymbol)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxSectionSymbol].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxSequenceEnd)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxSequenceEnd].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxShape)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxShape].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxSolid)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxSolid].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxSolid3d)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxSolid3d].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxSubDMesh)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxSubDMesh].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxSurface)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxSurface].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxSpline)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxSpline].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxSweptSurface)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxSweptSurface].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxTable)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxTable].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxUnderlayReference)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxUnderlayReference].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxVertex)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxVertex].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxVertex2d)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxVertex2d].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxViewBorder)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxViewBorder].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxViewport)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxViewport].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxViewRepBlockReference)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxViewRepBlockReference].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxWipeout)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxWipeout].Add(entityId);
-			}
-			else if (entityId.ObjectClass == rxXline)
-			{
-				entities[rxEntity].Add(entityId);
-				entities[rxXline].Add(entityId);
-			}
+			// Place entity into it's respective buckets.
+			entities[rxEntity].Add(entityId);
+			entities[objectClass].Add(entityId);
 		}
 
 		/// <summary>
@@ -871,6 +487,7 @@ namespace ACAD_Utilities
 
 			return SortDictionary[database];
 		}
+
 		#endregion
 
 		#region Instance Methods
@@ -915,9 +532,8 @@ namespace ACAD_Utilities
 		/// <param name="e">Data on the object appended.</param>
 		private void Database_ObjectAppended(object sender, ObjectEventArgs e)
 		{
-			ObjectId id = e.DBObject.ObjectId;
-			AddId(entitiesField, id);
-			ObjectAppended?.Invoke(this, new(id));
+			AddId(entitiesField, e.DBObject.Id);
+			ObjectAppended?.Invoke(this, new(e.DBObject.Id));
 		}
 
 		/// <summary>
@@ -927,9 +543,8 @@ namespace ACAD_Utilities
 		/// <param name="e">Data on the object appended.</param>
 		private void Database_ObjectErased(object sender, ObjectErasedEventArgs e)
 		{
-			ObjectId id = e.DBObject.ObjectId;
-			RemoveId(entitiesField, id);
-			ObjectErased?.Invoke(this, new(id));
+			RemoveId(entitiesField, e.DBObject.Id);
+			ObjectErased?.Invoke(this, new(e.DBObject.Id));
 		}
 
 		/// <summary>
@@ -939,9 +554,8 @@ namespace ACAD_Utilities
 		/// <param name="e">Data on the object appended.</param>
 		private void Database_ObjectUnappended(object sender, ObjectEventArgs e)
 		{
-			ObjectId id = e.DBObject.ObjectId;
-			RemoveId(entitiesField, id);
-			ObjectUnappended?.Invoke(this, new(id));
+			RemoveId(entitiesField, e.DBObject.Id);
+			ObjectUnappended?.Invoke(this, new(e.DBObject.Id));
 		}
 
 		/// <summary>
@@ -951,9 +565,8 @@ namespace ACAD_Utilities
 		/// <param name="e">Data on the object appended.</param>
 		private void Database_ObjectReappended(object sender, ObjectEventArgs e)
 		{
-			ObjectId id = e.DBObject.ObjectId;
-			AddId(entitiesField, id);
-			ObjectReappended?.Invoke(this, new(id));
+			AddId(entitiesField, e.DBObject.Id);
+			ObjectReappended?.Invoke(this, new(e.DBObject.Id));
 		}
 
 		#endregion
