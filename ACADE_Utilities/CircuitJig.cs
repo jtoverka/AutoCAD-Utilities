@@ -54,7 +54,15 @@ namespace ACADE_Utilities
 		public CircuitJig(AeCircuit circuit) : base(circuit.BlockReference)
 		{
 			this.circuit = circuit;
-			spaceId = Application.DocumentManager.MdiActiveDocument.Database.CurrentSpaceId;
+
+			Database database = Application.DocumentManager.MdiActiveDocument.Database;
+			spaceId = database.CurrentSpaceId;
+
+			bool started = database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
+
+			AeDrawing drawing = AeDrawing.GetOrCreate(database);
+			drawing.Refresh();
 		}
 
 		#endregion
@@ -98,19 +106,17 @@ namespace ACADE_Utilities
 				return false;
 
 			bool started = database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
 
 			try
 			{
-				AeDrawing drawing = AeDrawing.GetOrCreate(transaction, database);
-				circuit.UpdateWireNo(transaction, spaceId, drawing.AeLadders);
+				AeDrawing drawing = AeDrawing.GetOrCreate(database);
+				circuit.UpdateWireNo(spaceId, drawing.AeLadders);
 
 				if (started)
 					transaction.Commit();
 			}
 			catch { }
-
-			if (started)
-				transaction?.Dispose();
 
 			return true;
 		}

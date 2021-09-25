@@ -57,6 +57,7 @@
     <Compile Include="Check.cs" />
     <Compile Include="Attrib.cs" />
     <Compile Include="Commands.cs" />
+    <Compile Include="Disposable.cs" />
     <Compile Include="GeometricLibrary.cs" />
     <Compile Include="Overkill.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

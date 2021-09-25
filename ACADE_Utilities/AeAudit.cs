@@ -39,7 +39,6 @@ namespace ACADE_Utilities
 	{
 		#region Fields
 
-		private readonly Transaction transactionField;
 		private readonly AeDrawing aeDrawing;
 		private bool wireGapPointerField = true;
 		private bool bogusWireNumberField = true;
@@ -125,34 +124,26 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Initialize a new instance of this class.
 		/// </summary>
-		/// <param name="transaction">The transaction to perform operations.</param>
 		/// <param name="database">The database to do an electrical audit.</param>
 		/// <exception cref="ArgumentNullException"/>
 		/// <exception cref="NullReferenceException"/>
 		/// <exception cref="InvalidOperationException"/>
 		/// <exception cref="ObjectDisposedException"/>
-		public AeAudit(Transaction transaction, Database database)
+		public AeAudit(Database database)
 		{
-			transaction.Validate(true);
 			database.Validate(true);
-
-			transactionField = transaction;
-			aeDrawing = AeDrawing.GetOrCreate(transaction, database);
+			aeDrawing = AeDrawing.GetOrCreate(database);
 		}
 
 		/// <summary>
 		/// Initialize a new instance of this class.
 		/// </summary>
-		/// <param name="transaction">The transaction to perform operations.</param>
 		/// <param name="aeDrawing">The drawing to do an electrical audit.</param>
 		/// <exception cref="ArgumentNullException"/>
 		/// <exception cref="NullReferenceException"/>
 		/// <exception cref="ObjectDisposedException"/>
-		public AeAudit(Transaction transaction, AeDrawing aeDrawing)
+		public AeAudit(AeDrawing aeDrawing)
 		{
-			transaction.Validate(true);
-
-			transactionField = transaction;
 			this.aeDrawing = aeDrawing;
 		}
 
@@ -165,12 +156,17 @@ namespace ACADE_Utilities
 		/// </summary>
 		public void Audit()
 		{
+			bool started = aeDrawing.Database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
+
+			aeDrawing.Refresh();
+
 			ObjectId[] ids = aeDrawing[AeObject.Wire].ToArray();
 			for (int i = 0; i < ids.Length; i++)
 			{
 				ObjectId id = ids[i];
 
-				using Line line = transactionField.GetObject(id, OpenMode.ForRead) as Line;
+				using Line line = transaction.GetObject(id, OpenMode.ForRead) as Line;
 				if (ZeroLengthWires)
 				{
 					if (line.Length == 0)
@@ -185,7 +181,7 @@ namespace ACADE_Utilities
 					if (!line.Database.Validate(false, false))
 						continue;
 					
-					var attributes = line.GetAttributes(transactionField);
+					var attributes = line.GetAttributes(transaction);
 					if (!attributes.ContainsKey("WNPTR"))
 						continue;
 

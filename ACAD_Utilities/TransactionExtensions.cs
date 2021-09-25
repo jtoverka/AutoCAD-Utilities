@@ -18,17 +18,14 @@ namespace ACAD_Utilities
 			database.Validate(true, true);
 
 			TransactionManager manager = database.TransactionManager;
+			bool start = manager.TopTransaction == null;
 
-			if (manager.TopTransaction == null)
-			{
+			if (start)
 				transaction = manager.StartTransaction();
-				return true;
-			}
 			else
-			{
 				transaction = manager.TopTransaction;
-				return false;
-			}
+
+			return start;
 		}
 	}
 }

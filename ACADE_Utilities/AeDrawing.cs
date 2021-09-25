@@ -91,26 +91,15 @@ namespace ACADE_Utilities
 		/// </summary>
 		public IList<AeLadder> AeLadders
 		{ 
-			get
-			{
-				if (!database.Validate(false))
-					return aeLadders;
+			get { return aeLadders; }
+		}
 
-				bool started = database.GetOrStartTransaction(out Transaction transaction);
-
-				if (!transaction.Validate(false))
-					return aeLadders;
-
-				RefreshAeDrawing(transaction);
-
-				if (started)
-				{
-					transaction.Abort();
-					transaction.Dispose();
-				}
-
-				return aeLadders; 
-			}
+		/// <summary>
+		/// Gets the database this object wraps.
+		/// </summary>
+		public Database Database
+		{
+			get { return database; }
 		}
 
 		#endregion
@@ -120,16 +109,18 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Initializes a new instances of this class.
 		/// </summary>
-		/// <param name="transaction">The transaction this object uses to perform operations.</param>
 		/// <param name="database">The drawing database.</param>
 		/// <exception cref="ArgumentNullException"/>
 		/// <exception cref="NullReferenceException"/>
 		/// <exception cref="InvalidOperationException"/>
 		/// <exception cref="ObjectDisposedException"/>
-		private AeDrawing(Transaction transaction, Database database)
+		private AeDrawing(Database database)
 		{
-			transaction.Validate(true);
-			database.Validate(true);
+			bool started = database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
+
+			transaction.Validate(false, true);
+			database.Validate(true, true);
 
 			sortField = Sort.GetSort(transaction, database);
 			this.database = database;
@@ -138,6 +129,7 @@ namespace ACADE_Utilities
 			sortField.ObjectErased += SortField_ObjectErased;
 			sortField.ObjectReappended += SortField_ObjectReappended;
 			sortField.ObjectUnappended += SortField_ObjectUnappended;
+			sortField.ObjectModified += SortField_ObjectModified;
 
 			foreach (AeObject value in Enum.GetValues(typeof(AeObject)))
 			{
@@ -154,14 +146,16 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Initializes a new instances of this class.
 		/// </summary>
-		/// <param name="transaction">The transaction this object uses to perform operations.</param>
 		/// <param name="drawing">The drawing database.</param>
 		/// <exception cref="ArgumentNullException"/>
 		/// <exception cref="NullReferenceException"/>
 		/// <exception cref="ObjectDisposedException"/>
-		private AeDrawing(Transaction transaction, Sort drawing)
+		private AeDrawing(Sort drawing)
 		{
-			transaction.Validate(true);
+			bool started = drawing.Database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
+
+			transaction.Validate(false, true);
 
 			sortField = drawing;
 
@@ -169,6 +163,7 @@ namespace ACADE_Utilities
 			sortField.ObjectErased += SortField_ObjectErased;
 			sortField.ObjectReappended += SortField_ObjectReappended;
 			sortField.ObjectUnappended += SortField_ObjectUnappended;
+			sortField.ObjectModified += SortField_ObjectModified;
 
 			foreach (AeObject value in Enum.GetValues(typeof(AeObject)))
 			{
@@ -189,15 +184,17 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Get the AeDrawing equivalent to a drawing Database.
 		/// </summary>
-		/// <param name="transaction">The transaction to perform operations.</param>
 		/// <param name="database">The drawing database.</param>
 		/// <returns>The AeDrawing.</returns>
-		public static AeDrawing GetOrCreate(Transaction transaction, Database database)
+		public static AeDrawing GetOrCreate(Database database)
 		{
+			bool started = database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
+
 			database.Validate(true, true);
 
 			if (!drawingDatabases.ContainsKey(database))
-				drawingDatabases[database] = new(transaction, database);
+				drawingDatabases[database] = new(database);
 
 			return drawingDatabases[database];
 		}
@@ -205,15 +202,15 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Get the AeDrawing equivalent to a drawing Database.
 		/// </summary>
-		/// <param name="transaction">the transaction to perform operations.</param>
 		/// <param name="drawing">The drawing database.</param>
 		/// <returns>The AeDrawing.</returns>
-		public static AeDrawing GetOrCreate(Transaction transaction, Sort drawing)
+		public static AeDrawing GetOrCreate(Sort drawing)
 		{
-			transaction.Validate(true, true);
+			bool started = drawing.Database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
 
 			if (!drawingDatabases.ContainsKey(drawing.Database))
-				drawingDatabases[drawing.Database] = new(transaction, drawing);
+				drawingDatabases[drawing.Database] = new( drawing);
 
 			return drawingDatabases[drawing.Database];
 		}
@@ -246,13 +243,27 @@ namespace ACADE_Utilities
 		/// Insert circuit into drawing.
 		/// </summary>
 		/// <param name="circuit">The circuit to add.</param>
-		/// <param name="transaction">The database transaction to perform operations.</param>
 		/// <param name="spaceId">The space to add circuit.</param>
 		/// <param name="point">The point in space to add circuit.</param>
-		public void Insert(AeCircuit circuit, Transaction transaction, ObjectId spaceId, Point3d point)
+		public void Insert(AeCircuit circuit, ObjectId spaceId, Point3d point)
 		{
-			RefreshAeDrawing(transaction);
-			circuit.AutoInsertCircuit(transaction, spaceId, point, aeLadders);
+			bool started = spaceId.Database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
+
+			Refresh();
+
+			circuit.AutoInsertCircuit(spaceId, point, aeLadders);
+		}
+
+		/// <summary>
+		/// Prompts the user to select a point to insert the circuit.
+		/// </summary>
+		/// <param name="circuit">The circuit to add.</param>
+		public void Insert(AeCircuit circuit)
+		{
+			Refresh();
+
+			circuit.ManualInsertCircuit(aeLadders);
 		}
 
 		/// <summary>
@@ -367,9 +378,11 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Searches the drawing for wire number ladders.
 		/// </summary>
-		/// <param name="transaction">The database transaction used to perform operations.</param>
-		private void RefreshAeDrawing(Transaction transaction)
+		public void Refresh()
 		{
+			bool started = database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
+
 			if (!transaction.Validate(false, false))
 				return;
 
@@ -470,6 +483,13 @@ namespace ACADE_Utilities
 		/// <param name="sender">The object that invoked the event.</param>
 		/// <param name="e">The event parameters.</param>
 		private void SortField_ObjectUnappended(object sender, SortEventArgs e) => RemoveObject(e.ObjectId);
+
+		/// <summary>
+		/// Object modified in drawing.
+		/// </summary>
+		/// <param name="sender">The object that invoked the event.</param>
+		/// <param name="e">The event parameters.</param>
+		private void SortField_ObjectModified(object sender, SortEventArgs e) => AddObject(e.ObjectId);
 
 		#endregion
 	}

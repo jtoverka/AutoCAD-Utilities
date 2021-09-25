@@ -392,6 +392,7 @@ namespace ACAD_Utilities
 			database.ObjectErased += Database_ObjectErased;
 			database.ObjectUnappended += Database_ObjectUnappended;
 			database.ObjectReappended += Database_ObjectReappended;
+			database.ObjectModified += Database_ObjectModified;
 
 			ObjectIdCollection spaces = new();
 
@@ -526,6 +527,11 @@ namespace ACAD_Utilities
 		public event SortEventHandler ObjectReappended;
 
 		/// <summary>
+		/// Invoked on an object being modified.
+		/// </summary>
+		public event SortEventHandler ObjectModified;
+
+		/// <summary>
 		/// Database object appended handler to keep the dictionary fresh
 		/// </summary>
 		/// <param name="sender">Object that triggered the event.</param>
@@ -567,6 +573,16 @@ namespace ACAD_Utilities
 		{
 			AddId(entitiesField, e.DBObject.Id);
 			ObjectReappended?.Invoke(this, new(e.DBObject.Id));
+		}
+
+		/// <summary>
+		/// Database object modified handler.
+		/// </summary>
+		/// <param name="sender">Object that triggered the event.</param>
+		/// <param name="e">Data on the object appended.</param>
+		private void Database_ObjectModified(object sender, ObjectEventArgs e)
+		{
+			ObjectModified?.Invoke(this, new(e.DBObject.Id));
 		}
 
 		#endregion

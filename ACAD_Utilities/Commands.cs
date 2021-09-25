@@ -48,15 +48,10 @@ namespace ACAD_Utilities
 
 			Database database = Application.DocumentManager.MdiActiveDocument.Database;
 			bool started = database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
 
 			Overkill overkill = new(transaction, database);
 			overkill.Overkill_All();
-
-			if (started)
-			{
-				transaction.Commit();
-				transaction.Dispose();
-			}
 
 			return result;
 		}

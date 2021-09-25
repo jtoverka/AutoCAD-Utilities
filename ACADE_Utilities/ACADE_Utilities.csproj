@@ -56,6 +56,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AeAudit.cs" />
+    <Compile Include="AeDatabase.cs" />
     <Compile Include="AeLadder.cs" />
     <Compile Include="AeObject.cs" />
     <Compile Include="AeDrawing.cs" />
