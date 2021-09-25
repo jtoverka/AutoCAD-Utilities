@@ -32,7 +32,7 @@ using System.ComponentModel;
 namespace ACAD_Utilities
 {
 	/// <summary>
-	/// Represents a .NET database container to implement overkill.
+	/// Represents a database wrapper to implement overkill.
 	/// </summary>
 	public class Overkill : INotifyPropertyChanged
 	{
@@ -41,7 +41,6 @@ namespace ACAD_Utilities
 		// flag for error checks.
 		private bool check = true;
 
-		private readonly Transaction transactionField = null;
 		private readonly Database databaseField = null;
 
 		// Dictionary to sort out buckets of entities by type.
@@ -254,18 +253,16 @@ namespace ACAD_Utilities
 		/// </summary>
 		/// <param name="transaction"></param>
 		/// <param name="database"></param>
-		public Overkill(Transaction transaction, Database database)
+		public Overkill(Database database)
 		{
 			if (check)
 			{
 				database.Validate(true);
-				transaction.Validate(true);
 			}
 
 			databaseField = database;
-			transactionField = transaction;
 
-			sortField = Sort.GetSort(transaction, database);
+			sortField = Sort.GetSort(database);
 		}
 
 		#endregion
@@ -290,8 +287,11 @@ namespace ACAD_Utilities
 		/// <returns></returns>
 		protected bool MatchObjectProperties(ObjectId entity1Id, ObjectId entity2Id)
 		{
-			using Entity entity1 = transactionField.GetObject(entity1Id, OpenMode.ForRead) as Entity;
-			using Entity entity2 = transactionField.GetObject(entity2Id, OpenMode.ForRead) as Entity;
+			bool started = databaseField.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
+
+			using Entity entity1 = transaction.GetObject(entity1Id, OpenMode.ForRead) as Entity;
+			using Entity entity2 = transaction.GetObject(entity2Id, OpenMode.ForRead) as Entity;
 
 			bool match = true;
 
@@ -323,10 +323,12 @@ namespace ACAD_Utilities
 			if (check)
 			{
 				databaseField.Validate(false);
-				transactionField.Validate(false);
 			}
 			if (!sortField.ContainsKey(Sort.rxLine))
 				return;
+
+			bool started = databaseField.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
 
 			HashSet<ObjectId> lineIds = sortField[Sort.rxLine];
 			HashSet<ObjectId> usedIds = new();
@@ -338,7 +340,7 @@ namespace ACAD_Utilities
 				if (!line1Id.Validate(false))
 					continue;
 
-				using Line line1 = transactionField.GetObject(line1Id, OpenMode.ForRead) as Line;
+				using Line line1 = transaction.GetObject(line1Id, OpenMode.ForRead) as Line;
 				
 				if (line1.Length < Tolerance)
 				{
@@ -355,7 +357,7 @@ namespace ACAD_Utilities
 					if (!line2Id.Validate(false))
 						continue;
 
-					using Line line2 = transactionField.GetObject(line2Id, OpenMode.ForRead) as Line;
+					using Line line2 = transaction.GetObject(line2Id, OpenMode.ForRead) as Line;
 					bool match = line2.StartPoint.DistanceTo(line1.StartPoint) < Tolerance
 							  && line2.EndPoint.DistanceTo(line1.EndPoint) < Tolerance
 							  || line2.EndPoint.DistanceTo(line1.StartPoint) < Tolerance
@@ -383,10 +385,13 @@ namespace ACAD_Utilities
 			if (check)
 			{
 				databaseField.Validate(false);
-				transactionField.Validate(false);
 			}
+
 			if (!sortField.ContainsKey(Sort.rxPolyline))
 				return;
+
+			bool started = databaseField.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
 
 			HashSet<ObjectId> lineIds = sortField[Sort.rxPolyline];
 			HashSet<ObjectId> usedIds = new();
@@ -398,7 +403,7 @@ namespace ACAD_Utilities
 				if (!line1Id.Validate(false))
 					continue;
 
-				using Polyline line1 = transactionField.GetObject(line1Id, OpenMode.ForRead) as Polyline;
+				using Polyline line1 = transaction.GetObject(line1Id, OpenMode.ForRead) as Polyline;
 
 				if (line1.Length < Tolerance)
 				{
@@ -417,8 +422,11 @@ namespace ACAD_Utilities
 			if (check)
 			{
 				databaseField.Validate(false);
-				transactionField.Validate(false);
 			}
+
+			bool started = databaseField.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
+
 			// Insert additional code here
 		}
 
@@ -430,8 +438,11 @@ namespace ACAD_Utilities
 			if (check)
 			{
 				databaseField.Validate(false);
-				transactionField.Validate(false);
 			}
+
+			bool started = databaseField.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
+
 			// Insert additional code here
 		}
 
@@ -443,8 +454,11 @@ namespace ACAD_Utilities
 			if (check)
 			{
 				databaseField.Validate(false);
-				transactionField.Validate(false);
 			}
+
+			bool started = databaseField.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
+
 			// Insert additional code here
 		}
 
@@ -456,8 +470,11 @@ namespace ACAD_Utilities
 			if (check)
 			{
 				databaseField.Validate(false);
-				transactionField.Validate(false);
 			}
+
+			bool started = databaseField.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
+
 			// Insert additional code here
 		}
 
@@ -469,8 +486,11 @@ namespace ACAD_Utilities
 			if (check)
 			{
 				databaseField.Validate(false);
-				transactionField.Validate(false);
 			}
+
+			bool started = databaseField.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
+
 			// Insert additional code here
 		}
 
@@ -482,8 +502,11 @@ namespace ACAD_Utilities
 			if (check)
 			{
 				databaseField.Validate(false);
-				transactionField.Validate(false);
 			}
+
+			bool started = databaseField.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
+
 			// Insert additional code here
 		}
 
@@ -495,8 +518,11 @@ namespace ACAD_Utilities
 			if (check)
 			{
 				databaseField.Validate(false);
-				transactionField.Validate(false);
 			}
+
+			bool started = databaseField.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
+
 			// Insert additional code here
 		}
 
@@ -508,8 +534,10 @@ namespace ACAD_Utilities
 			if (check)
 			{
 				databaseField.Validate(false);
-				transactionField.Validate(false);
 			}
+
+			bool started = databaseField.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
 
 			HashSet<ObjectId> circleIds = sortField[Sort.rxCircle];
 			HashSet<ObjectId> usedIds = new();
@@ -520,7 +548,7 @@ namespace ACAD_Utilities
 				if (!circle1Id.Validate(false))
 					continue;
 
-				using Circle circle1 = transactionField.GetObject(circle1Id, OpenMode.ForRead) as Circle;
+				using Circle circle1 = transaction.GetObject(circle1Id, OpenMode.ForRead) as Circle;
 
 				if (circle1.Diameter < Tolerance)
 				{
@@ -534,7 +562,7 @@ namespace ACAD_Utilities
 					if (usedIds.Contains(circle2Id))
 						continue;
 
-					using Circle circle2 = transactionField.GetObject(circle2Id, OpenMode.ForRead) as Circle;
+					using Circle circle2 = transaction.GetObject(circle2Id, OpenMode.ForRead) as Circle;
 
 					bool match = MatchObjectProperties(circle1Id, circle2Id);
 
@@ -564,8 +592,10 @@ namespace ACAD_Utilities
 			if (check)
 			{
 				databaseField.Validate(false);
-				transactionField.Validate(false);
 			}
+
+			bool started = databaseField.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
 
 			check = false;
 

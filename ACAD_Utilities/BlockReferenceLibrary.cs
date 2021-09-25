@@ -79,7 +79,7 @@ namespace ACAD_Utilities
 				transaction.AddNewlyCreatedDBObject(blockReference, true);
 
 				// Write attribute data to block reference
-				blockReference.SetAttributes(transaction, attributes);
+				blockReference.SetAttributes(attributes);
 			}
 			else
 			{

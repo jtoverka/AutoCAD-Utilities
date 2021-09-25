@@ -39,14 +39,16 @@ namespace ACAD_Utilities
 		/// Gets Attributes of a <see cref="BlockReference"/>. This takes both data in the attribute collection and XData.
 		/// </summary>
 		/// <param name="dbObject"></param>
-		/// <param name="transaction"></param>
 		/// <returns><see cref="Dictionary{TKey, TValue}"/></returns>
 		/// <remarks>
 		/// The <see cref="Dictionary{TKey, TValue}"/> uses the attribute tag as a key. The value of <see cref="Tuple{T, T}"/> is a typecode, string pair. The typecode can either be 1001 (for standard attribute textstring) or 1005 (for handle references).
 		/// </remarks>
-		public static Dictionary<string, Attrib> GetAttributes(this DBObject dbObject, Transaction transaction)
+		public static Dictionary<string, Attrib> GetAttributes(this DBObject dbObject)
         {
             Dictionary<string, Attrib> attributes = new();
+
+            bool started = dbObject.Database.GetOrStartTransaction(out Transaction transaction);
+            using Disposable disposable = new(transaction, started);
 
             // Get Attributes
             if (dbObject.GetType() == typeof(BlockReference))
@@ -92,14 +94,16 @@ namespace ACAD_Utilities
 		/// Gets Attributes of a <see cref="BlockReference"/>. This takes both data in the attribute collection and XData.
 		/// </summary>
 		/// <param name="dbObject"></param>
-		/// <param name="transaction"></param>
 		/// <returns><see cref="Dictionary{TKey, TValue}"/></returns> 
 		/// <remarks>
 		/// The <see cref="Dictionary{TKey, TValue}"/> uses the attribute tag as a key. The value of <see cref="Tuple{T, T}"/> is a typecode, string pair. The typecode can either be 1001 (for standard attribute textstring) or 1005 (for handle references).
 		/// </remarks>
-		public static Dictionary<string, Tuple<Attrib, ObjectId?>> GetAttributesWithIds(this DBObject dbObject, Transaction transaction)
+		public static Dictionary<string, Tuple<Attrib, ObjectId?>> GetAttributesWithIds(this DBObject dbObject)
         {
             Dictionary<string, Tuple<Attrib, ObjectId?>> attributes = new();
+
+            bool started = dbObject.Database.GetOrStartTransaction(out Transaction transaction);
+            using Disposable disposable = new(transaction, started);
 
             // Get Attributes
             if (dbObject.GetType() == typeof(BlockReference))
@@ -144,17 +148,19 @@ namespace ACAD_Utilities
         /// <summary>
         /// Set Attributes of a <see cref="BlockReference"/>. If data in the dictionary does not have an <see cref="AttributeReference"/> to write to, it converts the data to XData and writes to the Block Reference.
         /// </summary>
-        /// <param name="transaction"></param>
         /// <param name="entity"></param>
         /// <param name="attributes"></param>
         /// <remarks>
         /// <see cref="Dictionary{TKey, TValue}"/> uses the attribute tag as a key. The value of <see cref="Tuple{T, T}"/> is a typecode, string pair. The typecode can either be 1001 (for standard attribute textstring) or 1005 (for handle references).
         /// </remarks>
-        public static void SetAttributes(this Entity entity, Transaction transaction, Dictionary<string, Attrib> attributes)
+        public static void SetAttributes(this Entity entity, Dictionary<string, Attrib> attributes)
         {
             // Return if no data to write
             if (attributes.Count == 0)
                 return;
+
+            bool started = entity.Database.GetOrStartTransaction(out Transaction transaction);
+            using Disposable disposable = new(transaction, started);
 
             // Unlock layer prior to editing entity
             using LayerTableRecord layer = transaction.GetObject(entity.LayerId, OpenMode.ForRead) as LayerTableRecord;
@@ -219,17 +225,19 @@ namespace ACAD_Utilities
         /// <summary>
         /// Set Attributes of a <see cref="BlockReference"/>. If data in the dictionary does not have an <see cref="AttributeReference"/> to write to, it converts the data to XData and writes to the Block Reference.
         /// </summary>
-        /// <param name="transaction"></param>
         /// <param name="entity"></param>
         /// <param name="attributes"></param>
         /// <remarks>
         /// <see cref="Dictionary{TKey, TValue}"/> uses the attribute tag as a key. The value of <see cref="Tuple{T, T}"/> is a typecode, string pair. The typecode can either be 1001 (for standard attribute textstring) or 1005 (for handle references).
         /// </remarks>
-        public static void SetAttributes(this Entity entity, Transaction transaction, Dictionary<string, Tuple<Attrib, ObjectId?>> attributes)
+        public static void SetAttributes(this Entity entity, Dictionary<string, Tuple<Attrib, ObjectId?>> attributes)
         {
             // Make sure the block reference is able to be written
             entity.UpgradeOpen();
             Database database = entity.Database;
+
+            bool started = database.GetOrStartTransaction(out Transaction transaction);
+            using Disposable disposable = new(transaction, started);
 
             // Switch database to allow attribute text alignment adjustments
             using WorkingDatabaseSwitcher switcher = new(database);

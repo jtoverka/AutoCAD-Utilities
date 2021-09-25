@@ -122,7 +122,7 @@ namespace ACADE_Utilities
 			transaction.Validate(false, true);
 			database.Validate(true, true);
 
-			sortField = Sort.GetSort(transaction, database);
+			sortField = Sort.GetSort(database);
 			this.database = database;
 
 			sortField.ObjectAppended += SortField_ObjectAppended;
@@ -286,7 +286,7 @@ namespace ACADE_Utilities
 
 				using BlockReference blockReference = transaction.GetObject(blockId, OpenMode.ForRead) as BlockReference;
 
-				blockAttributes[blockId] = blockReference.GetAttributes(transaction);
+				blockAttributes[blockId] = blockReference.GetAttributes();
 
 				if (blockReference.GetEffectiveName().Equals("WDDOT", StringComparison.OrdinalIgnoreCase))
 				{

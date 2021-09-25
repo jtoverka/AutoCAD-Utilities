@@ -138,7 +138,7 @@ namespace ACADE_Utilities
 				if (objectId.ObjectClass == Sort.rxLine)
 				{
 					using Line line = transaction.GetObject(objectId, OpenMode.ForRead) as Line;
-					Dictionary<string, Attrib> attributes = line.GetAttributes(transaction);
+					Dictionary<string, Attrib> attributes = line.GetAttributes();
 
 					if (!attributes.ContainsKey("WNPTR"))
 						continue;
@@ -151,7 +151,7 @@ namespace ACADE_Utilities
 						continue;
 
 					using BlockReference reference = transaction.GetObject(wireNoId, OpenMode.ForRead) as BlockReference;
-					var attributeIds = reference.GetAttributesWithIds(transaction);
+					var attributeIds = reference.GetAttributesWithIds();
 
 					if (!(attributeIds.ContainsKey("WIRENO") && attributeIds["WIRENO"].Item2.HasValue))
 						continue;
@@ -166,7 +166,7 @@ namespace ACADE_Utilities
 					if (!blocks.Contains(blockReference.BlockTableRecord))
 						blocks.Add(blockReference.BlockTableRecord);
 
-					Dictionary<string, Tuple<Attrib, ObjectId?>> attributeIds = blockReference.GetAttributesWithIds(transaction);
+					Dictionary<string, Tuple<Attrib, ObjectId?>> attributeIds = blockReference.GetAttributesWithIds();
 
 					blockAttributes.Add(objectId, attributeIds);
 					blockReferences.Add(objectId);
@@ -496,7 +496,7 @@ namespace ACADE_Utilities
 						write[tag] = BlockKeys[value]["BASETAG"];
 				}
 
-				blockReference.SetAttributes(transaction, write);
+				blockReference.SetAttributes(write);
 			}
 
 			// Find and replace withiin blocks if BLOCKREPLACE attribute key is found
@@ -538,7 +538,7 @@ namespace ACADE_Utilities
 			{
 				using BlockReference blockReference = transaction.GetObject(id, OpenMode.ForWrite) as BlockReference;
 				attributes["LINKTERM"] = new(1000, Guid.NewGuid().ToString().ToUpper());
-				blockReference.SetAttributes(transaction, attributes);
+				blockReference.SetAttributes(attributes);
 			}
 		}
 
@@ -576,7 +576,7 @@ namespace ACADE_Utilities
 			{
 				using BlockReference blockReference = transaction.GetObject(attribute.OwnerId, OpenMode.ForRead) as BlockReference;
 
-				foreach (var item in blockReference.GetAttributesWithIds(transaction))
+				foreach (var item in blockReference.GetAttributesWithIds())
 				{
 					if (!(terminal.IsMatch(item.Key) && item.Value.Item2.HasValue))
 						continue;

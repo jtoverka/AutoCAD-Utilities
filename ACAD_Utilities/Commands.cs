@@ -50,8 +50,13 @@ namespace ACAD_Utilities
 			bool started = database.GetOrStartTransaction(out Transaction transaction);
 			using Disposable disposable = new(transaction, started);
 
-			Overkill overkill = new(transaction, database);
-			overkill.Overkill_All();
+			try
+			{
+				Overkill overkill = new(database);
+				overkill.Overkill_All();
+				transaction.Commit();
+			}
+			catch { }
 
 			return result;
 		}

@@ -181,7 +181,7 @@ namespace ACADE_Utilities
 					if (!line.Database.Validate(false, false))
 						continue;
 					
-					var attributes = line.GetAttributes(transaction);
+					var attributes = line.GetAttributes();
 					if (!attributes.ContainsKey("WNPTR"))
 						continue;
 

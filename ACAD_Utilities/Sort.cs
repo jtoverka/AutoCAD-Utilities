@@ -380,10 +380,12 @@ namespace ACAD_Utilities
 		/// </summary>
 		/// <param name="transaction"></param>
 		/// <param name="database"></param>
-		private Sort(Transaction transaction, Database database)
+		private Sort(Database database)
 		{
 			database.Validate(true);
-			transaction.Validate(true);
+
+			bool started = database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
 
 			entitiesField = new();
 			Database = database;
@@ -478,13 +480,12 @@ namespace ACAD_Utilities
 		/// <param name="transaction">The transaction to perform operations.</param>
 		/// <param name="database">The database to sort.</param>
 		/// <returns></returns>
-		public static Sort GetSort(Transaction transaction, Database database)
+		public static Sort GetSort(Database database)
 		{
 			database.Validate(true, true);
-			transaction.Validate(true, true);
 
 			if (!SortDictionary.ContainsKey(database))
-				SortDictionary[database] = new(transaction, database);
+				SortDictionary[database] = new(database);
 
 			return SortDictionary[database];
 		}

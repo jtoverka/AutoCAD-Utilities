@@ -128,8 +128,8 @@ namespace ACADE_Utilities
 		{
 			using BlockReference wdm = transactionField.GetObject(wdmIdField, OpenMode.ForRead) as BlockReference;
 			using BlockReference wdmlr = transactionField.GetObject(wdmlrIdField, OpenMode.ForRead) as BlockReference;
-			Dictionary<string, Attrib> wdm_Attributes = wdm.GetAttributes(transactionField);
-			Dictionary<string, Attrib> wdmlr_Attributes = wdmlr.GetAttributes(transactionField);
+			Dictionary<string, Attrib> wdm_Attributes = wdm.GetAttributes();
+			Dictionary<string, Attrib> wdmlr_Attributes = wdmlr.GetAttributes();
 
 			wdmlrPointField = wdmlr.Position;
 
