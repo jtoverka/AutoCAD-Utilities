@@ -55,7 +55,7 @@ namespace ACADE_Utilities
 		{
 			this.circuit = circuit;
 
-			Database database = Application.DocumentManager.MdiActiveDocument.Database;
+			Database database = Active.Database;
 			spaceIdField = database.CurrentSpaceId;
 
 			bool started = database.GetOrStartTransaction(out Transaction transaction);

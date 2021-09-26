@@ -42,8 +42,8 @@ namespace ACAD_Utilities
         /// <param name="database">The database to switch to.</param>
         public WorkingDatabaseSwitcher(Database database)
         {
-            previousDatabaseField = HostApplicationServices.WorkingDatabase;
-            HostApplicationServices.WorkingDatabase = database;
+            previousDatabaseField = Active.WorkingDatabase;
+            Active.WorkingDatabase = database;
         }
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace ACAD_Utilities
         /// </summary>
         public void Dispose()
         {
-            HostApplicationServices.WorkingDatabase = previousDatabaseField;
+            Active.WorkingDatabase = previousDatabaseField;
         }
     }
 }

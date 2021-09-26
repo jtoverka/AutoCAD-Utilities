@@ -52,6 +52,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Active.cs" />
     <Compile Include="AttributeLibrary.cs" />
     <Compile Include="BlockReferenceLibrary.cs" />
     <Compile Include="Check.cs" />

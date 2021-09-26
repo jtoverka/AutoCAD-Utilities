@@ -41,12 +41,9 @@ namespace ACAD_Utilities
 		/// <param name="args"></param>
 		/// <returns></returns>
 		[CommandMethod("AcOverkill")]
-		public static ResultBuffer OverkillCommand(ResultBuffer args)
+		public static void OverkillCommand()
 		{
-			ResultBuffer result = new();
-			_ = args;
-
-			Database database = Application.DocumentManager.MdiActiveDocument.Database;
+			Database database = Active.Database;
 			bool started = database.GetOrStartTransaction(out Transaction transaction);
 			using Disposable disposable = new(transaction, started);
 
@@ -57,8 +54,6 @@ namespace ACAD_Utilities
 				transaction.Commit();
 			}
 			catch { }
-
-			return result;
 		}
 	}
 }

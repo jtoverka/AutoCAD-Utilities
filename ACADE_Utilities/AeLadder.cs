@@ -126,8 +126,7 @@ namespace ACADE_Utilities
 		/// </summary>
 		public void Refresh()
 		{
-			XDataLibrary.AttributePrefix = "VIA_WD_";
-			XDataLibrary.AttributeSuffix = string.Empty;
+			using AeXData aeXData = new();
 			using BlockReference wdm = transactionField.GetObject(wdmIdField, OpenMode.ForRead) as BlockReference;
 			using BlockReference wdmlr = transactionField.GetObject(wdmlrIdField, OpenMode.ForRead) as BlockReference;
 			Dictionary<string, Attrib> wdm_Attributes = wdm.GetAttributes();

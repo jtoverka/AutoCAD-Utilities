@@ -41,6 +41,10 @@ namespace ACAD_Utilities
 		private static readonly Dictionary<Database, Sort> SortDictionary = new();
 
 		/// <summary>
+		/// A thread-safe lock object
+		/// </summary>
+		private static readonly object lockField = new();
+		/// <summary>
 		/// The AlignedDimension RXClass object.
 		/// </summary>
 		public static readonly RXClass rxAlignedDimension = RXObject.GetClass(typeof(AlignedDimension));
@@ -482,8 +486,17 @@ namespace ACAD_Utilities
 		{
 			database.Validate(true, true);
 
+			// Prevent multiple threads from stumbling over the lock.
 			if (!SortDictionary.ContainsKey(database))
-				SortDictionary[database] = new(database);
+			{
+				// First thread locks onto the singleton factory.
+				lock (lockField)
+				{
+					// Create sorted dictionary on the database if one does not exist.
+					if (!SortDictionary.ContainsKey(database))
+						SortDictionary[database] = new(database);
+				}
+			}
 
 			return SortDictionary[database];
 		}

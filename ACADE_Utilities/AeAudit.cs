@@ -28,6 +28,7 @@ using ACAD_Utilities;
 using Autodesk.AutoCAD.DatabaseServices;
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 
 namespace ACADE_Utilities
@@ -156,8 +157,7 @@ namespace ACADE_Utilities
 		/// </summary>
 		public void Audit()
 		{
-			XDataLibrary.AttributePrefix = "VIA_WD_";
-			XDataLibrary.AttributeSuffix = string.Empty;
+			using AeXData aeXData = new();
 			bool started = aeDrawing.Database.GetOrStartTransaction(out Transaction transaction);
 			using Disposable disposable = new(transaction, started);
 
@@ -187,22 +187,24 @@ namespace ACADE_Utilities
 					if (!attributes.ContainsKey("WNPTR"))
 						continue;
 
-					Handle handle = new();
-					
-					if (long.TryParse(attributes["WNPTR"].Text, out long handleId))
-						handle = new(handleId);
-
-					ObjectId wirenoId = ObjectId.Null;
-					line.Database.TryGetObjectId(handle, out wirenoId);
-
-					if (!wirenoId.Validate(false))
+					if (long.TryParse(attributes["WNPTR"].Text, NumberStyles.HexNumber, null, out long handleId))
 					{
-						using ResultBuffer buffer = new(new TypedValue(1001, "VIA_WD_WNPTR"));
-						line.UpgradeOpen();
-						line.XData = buffer;
+						Handle handle = new(handleId);
+						ObjectId wirenoId = ObjectId.Null;
+						line.Database.TryGetObjectId(handle, out wirenoId);
+
+						if (!wirenoId.Validate(false))
+						{
+							using ResultBuffer buffer = new(new TypedValue(1001, "VIA_WD_WNPTR"));
+							line.UpgradeOpen();
+							line.XData = buffer;
+						}
 					}
 				}
 			}
+
+			if (started)
+				transaction.Commit();
 		}
 
 		#endregion

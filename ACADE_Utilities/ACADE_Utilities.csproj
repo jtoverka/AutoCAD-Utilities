@@ -64,6 +64,7 @@
     <Compile Include="CircuitJig.cs" />
     <Compile Include="AeCommands.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="AeXData.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ACAD_Utilities\ACAD_Utilities.csproj">

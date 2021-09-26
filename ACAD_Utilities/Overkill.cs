@@ -284,7 +284,7 @@ namespace ACAD_Utilities
 		/// <param name="entity1Id">First ObjectId entity to match.</param>
 		/// <param name="entity2Id">Second ObjectId entity to match.</param>
 		/// <returns></returns>
-		protected bool MatchObjectProperties(ObjectId entity1Id, ObjectId entity2Id)
+		protected virtual bool MatchObjectProperties(ObjectId entity1Id, ObjectId entity2Id)
 		{
 			bool started = databaseField.GetOrStartTransaction(out Transaction transaction);
 			using Disposable disposable = new(transaction, started);
@@ -317,7 +317,7 @@ namespace ACAD_Utilities
 		/// <summary>
 		/// Remove duplicate lines.
 		/// </summary>
-		public void Overkill_Line()
+		public virtual void Overkill_Line()
 		{
 			if (check)
 			{
@@ -357,10 +357,14 @@ namespace ACAD_Utilities
 						continue;
 
 					using Line line2 = transaction.GetObject(line2Id, OpenMode.ForRead) as Line;
-					bool match = line2.StartPoint.DistanceTo(line1.StartPoint) < Tolerance
-							  && line2.EndPoint.DistanceTo(line1.EndPoint) < Tolerance
-							  || line2.EndPoint.DistanceTo(line1.StartPoint) < Tolerance
-							  && line2.StartPoint.DistanceTo(line1.EndPoint) < Tolerance;
+
+					if (line1.BlockId != line2.BlockId)
+						continue;
+
+					bool match = (line2.StartPoint.DistanceTo(line1.StartPoint) < Tolerance
+							  && line2.EndPoint.DistanceTo(line1.EndPoint) < Tolerance)
+							  || (line2.EndPoint.DistanceTo(line1.StartPoint) < Tolerance
+							  && line2.StartPoint.DistanceTo(line1.EndPoint) < Tolerance);
 
 					match = match && MatchObjectProperties(line1Id, line2Id);
 
@@ -379,7 +383,7 @@ namespace ACAD_Utilities
 		/// <summary>
 		/// Remove duplicate polylines.
 		/// </summary>
-		public void Overkill_PolyLine()
+		public virtual void Overkill_PolyLine()
 		{
 			if (check)
 			{
@@ -416,7 +420,7 @@ namespace ACAD_Utilities
 		/// <summary>
 		/// Remove duplicate polyline2d objects.
 		/// </summary>
-		public void Overkill_PolyLine2d()
+		public virtual void Overkill_PolyLine2d()
 		{
 			if (check)
 			{
@@ -432,7 +436,7 @@ namespace ACAD_Utilities
 		/// <summary>
 		/// Remove duplicate polyline3d objects.
 		/// </summary>
-		public void Overkill_PolyLine3d()
+		public virtual void Overkill_PolyLine3d()
 		{
 			if (check)
 			{
@@ -448,7 +452,7 @@ namespace ACAD_Utilities
 		/// <summary>
 		/// Remove duplicate block references.
 		/// </summary>
-		public void Overkill_BlockReference()
+		public virtual void Overkill_BlockReference()
 		{
 			if (check)
 			{
@@ -464,7 +468,7 @@ namespace ACAD_Utilities
 		/// <summary>
 		/// Remove duplicate attribute definitions.
 		/// </summary>
-		public void Overkill_AttributeDefinition()
+		public virtual void Overkill_AttributeDefinition()
 		{
 			if (check)
 			{
@@ -480,7 +484,7 @@ namespace ACAD_Utilities
 		/// <summary>
 		/// Remove duplicate attribute references.
 		/// </summary>
-		public void Overkill_AttributeReference()
+		public virtual void Overkill_AttributeReference()
 		{
 			if (check)
 			{
@@ -496,7 +500,7 @@ namespace ACAD_Utilities
 		/// <summary>
 		/// Remove duplicate text.
 		/// </summary>
-		public void Overkill_DBText()
+		public virtual void Overkill_DBText()
 		{
 			if (check)
 			{
@@ -512,7 +516,7 @@ namespace ACAD_Utilities
 		/// <summary>
 		/// Remove duplicate MText.
 		/// </summary>
-		public void Overkill_MText()
+		public virtual void Overkill_MText()
 		{
 			if (check)
 			{
@@ -528,7 +532,7 @@ namespace ACAD_Utilities
 		/// <summary>
 		/// Remove duplicate Circles.
 		/// </summary>
-		public void Overkill_Circle()
+		public virtual void Overkill_Circle()
 		{
 			if (check)
 			{
@@ -586,7 +590,7 @@ namespace ACAD_Utilities
 		/// <summary>
 		/// Remove duplicates of all entities.
 		/// </summary>
-		public void Overkill_All()
+		public virtual void Overkill_All()
 		{
 			if (check)
 			{

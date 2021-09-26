@@ -24,9 +24,11 @@
 *For more information, please refer to <https://unlicense.org>
 */
 
+using ACAD_Utilities;
 using Autodesk.AutoCAD.ApplicationServices.Core;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Runtime;
+using System.Windows;
 
 namespace ACADE_Utilities
 {
@@ -35,5 +37,29 @@ namespace ACADE_Utilities
 	/// </summary>
 	public static class AeCommands
 	{
+		public static void Audit()
+		{
+			try
+			{
+				Database database = Active.Database;
+				bool started = database.GetOrStartTransaction(out Transaction transaction);
+				using Disposable disposable = new(transaction, started);
+
+				AeAudit aeAudit = new(database);
+				aeAudit.BogusWireNumber = true;
+				aeAudit.WireGap = true;
+				aeAudit.WireNumberFloater = true;
+				aeAudit.ZeroLengthWires = true;
+
+				aeAudit.Audit();
+
+				if (started)
+					transaction.Commit();
+			}
+			catch (System.Exception e)
+			{
+				MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+			}
+		}
 	}
 }

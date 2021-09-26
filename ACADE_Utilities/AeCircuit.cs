@@ -122,8 +122,7 @@ namespace ACADE_Utilities
 		/// <param name="blockId">The block table record circuit.</param>
 		public AeCircuit(ObjectId blockId)
 		{
-			XDataLibrary.AttributePrefix = "VIA_WD_";
-			XDataLibrary.AttributeSuffix = string.Empty;
+			using AeXData aeXData = new();
 			blockId.Validate(RXClass.GetClass(typeof(BlockTableRecord)), true);
 
 			Database database = blockId.Database;
@@ -248,8 +247,8 @@ namespace ACADE_Utilities
 		/// <returns>A collection of ObjectIds of the exploded inserted circuit.</returns>
 		public ObjectIdCollection ManualInsertCircuit(IList<AeLadder> aeLadders)
 		{
-			Document document = Application.DocumentManager.MdiActiveDocument;
-			Editor editor = document.Editor;
+			Document document = Active.Document;
+			Editor editor = Active.Editor;
 
 			bool started = document.Database.GetOrStartTransaction(out Transaction transaction);
 			using Disposable disposable = new(transaction, started);
@@ -401,8 +400,7 @@ namespace ACADE_Utilities
 		/// <param name="transaction">The database transaction to perform operations within.</param>
 		public void UpdateCircuitKeys(Transaction transaction)
 		{
-			XDataLibrary.AttributePrefix = "VIA_WD_";
-			XDataLibrary.AttributeSuffix = string.Empty;
+			using AeXData aeXData = new();
 			if (AttributeKeys == null || BlockKeys == null)
 				return;
 
@@ -522,8 +520,7 @@ namespace ACADE_Utilities
 		/// <param name="transaction">The database transaction to perform operations within.</param>
 		public void UpdateLinkTerms(Transaction transaction)
 		{
-			XDataLibrary.AttributePrefix = "VIA_WD_";
-			XDataLibrary.AttributeSuffix = string.Empty;
+			using AeXData aeXData = new();
 			Dictionary<string, Attrib> attributes = new();
 			foreach (ObjectId id in linkTermCollection)
 			{
@@ -556,8 +553,7 @@ namespace ACADE_Utilities
 		/// <returns></returns>
 		private ObjectId FindWireNoAttribute(ObjectId attributeId)
 		{
-			XDataLibrary.AttributePrefix = "VIA_WD_";
-			XDataLibrary.AttributeSuffix = string.Empty;
+			using AeXData aeXData = new();
 			Database database = attributeId.Database;
 
 			bool started = database.GetOrStartTransaction(out Transaction transaction);
