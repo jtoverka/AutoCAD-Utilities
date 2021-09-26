@@ -38,21 +38,14 @@ namespace ACAD_Utilities
 		/// Initializes a wildcard with the given search pattern.
 		/// </summary>
 		/// <param name="pattern">The wildcard pattern to match.</param>
-		public Wildcard(string pattern)
-		 : base(WildcardToRegex(pattern))
-		{
-		}
+		public Wildcard(string pattern) : base(WildcardToRegex(pattern)) { }
 
 		/// <summary>
 		/// Initializes a wildcard with the given search pattern and options.
 		/// </summary>
 		/// <param name="pattern">The wildcard pattern to match.</param>
-		/// <param name="options">A combination of one or more
-		/// <see cref="RegexOptions"/>.</param>
-		public Wildcard(string pattern, RegexOptions options)
-		 : base(WildcardToRegex(pattern), options)
-		{
-		}
+		/// <param name="options">A combination of one or more<see cref="RegexOptions"/>.</param>
+		public Wildcard(string pattern, RegexOptions options) : base(WildcardToRegex(pattern), options) { }
 
 		/// <summary>
 		/// Converts a wildcard to a regex.

@@ -30,11 +30,11 @@ using System.Collections.Generic;
 
 namespace ACAD_Utilities
 {
-    /// <summary>
-    /// Methods to process attributes and xdata as a dictionary.
-    /// </summary>
-    public static class AttributeLibrary
-    {
+	/// <summary>
+	/// Methods to process attributes and xdata as a dictionary.
+	/// </summary>
+	public static class AttributeLibrary
+	{
 		/// <summary>
 		/// Gets Attributes of a <see cref="BlockReference"/>. This takes both data in the attribute collection and XData.
 		/// </summary>
@@ -44,51 +44,37 @@ namespace ACAD_Utilities
 		/// The <see cref="Dictionary{TKey, TValue}"/> uses the attribute tag as a key. The value of <see cref="Tuple{T, T}"/> is a typecode, string pair. The typecode can either be 1001 (for standard attribute textstring) or 1005 (for handle references).
 		/// </remarks>
 		public static Dictionary<string, Attrib> GetAttributes(this DBObject dbObject)
-        {
-            Dictionary<string, Attrib> attributes = new();
+		{
+			Dictionary<string, Attrib> attributes = new();
 
-            bool started = dbObject.Database.GetOrStartTransaction(out Transaction transaction);
-            using Disposable disposable = new(transaction, started);
+			bool started = dbObject.Database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
 
-            // Get Attributes
-            if (dbObject.GetType() == typeof(BlockReference))
-            {
-                BlockReference blockReference = dbObject as BlockReference;
-                AttributeCollection collection = blockReference.AttributeCollection;
-                foreach (ObjectId id in collection)
-                {
-                    using AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
-                    string tag = attribute.Tag;
-                    string textstring = attribute.TextString;
-                    attributes[tag] = new Attrib(1000, textstring);
-                }
-            }
+			// Get Attributes
+			if (dbObject.GetType() == typeof(BlockReference))
+			{
+				BlockReference blockReference = dbObject as BlockReference;
+				AttributeCollection collection = blockReference.AttributeCollection;
+				foreach (ObjectId id in collection)
+				{
+					using AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
+					string tag = attribute.Tag;
+					string textstring = attribute.TextString;
+					attributes[tag] = new Attrib(1000, textstring);
+				}
+			}
 
-            // Get xdata
-            using ResultBuffer xdata = dbObject.XData;
-            if (xdata != null)
-            {
-                string application = null;
-                foreach (TypedValue typedValue in xdata)
-                {
-                    // Registered Application
-                    if (typedValue.TypeCode == 1001)
-                        application = typedValue.Value.ToString().Replace("VIA_WD_", "");
+			Dictionary<string, Attrib> xdata = dbObject.GetXData();
+			foreach (KeyValuePair<string, Attrib> item in xdata)
+			{
+				if (attributes.ContainsKey(item.Key))
+					continue;
 
-                    // Only accept strings or handles
-                    if ((typedValue.TypeCode == 1000
-                        || typedValue.TypeCode == 1005)
-                        && application != null)
-                    {
-                        string value = typedValue.Value.ToString();
-                        attributes[application] = new Attrib(typedValue.TypeCode, value);
-                        application = null;
-                    }
-                }
-            }
+				attributes[item.Key] = item.Value;
+			}
 
-            return attributes;
-        }
+			return attributes;
+		}
 
 		/// <summary>
 		/// Gets Attributes of a <see cref="BlockReference"/>. This takes both data in the attribute collection and XData.
@@ -99,192 +85,178 @@ namespace ACAD_Utilities
 		/// The <see cref="Dictionary{TKey, TValue}"/> uses the attribute tag as a key. The value of <see cref="Tuple{T, T}"/> is a typecode, string pair. The typecode can either be 1001 (for standard attribute textstring) or 1005 (for handle references).
 		/// </remarks>
 		public static Dictionary<string, Tuple<Attrib, ObjectId?>> GetAttributesWithIds(this DBObject dbObject)
-        {
-            Dictionary<string, Tuple<Attrib, ObjectId?>> attributes = new();
+		{
+			Dictionary<string, Tuple<Attrib, ObjectId?>> attributes = new();
 
-            bool started = dbObject.Database.GetOrStartTransaction(out Transaction transaction);
-            using Disposable disposable = new(transaction, started);
+			bool started = dbObject.Database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
 
-            // Get Attributes
-            if (dbObject.GetType() == typeof(BlockReference))
-            {
-                BlockReference blockReference = dbObject as BlockReference;
-                AttributeCollection collection = blockReference.AttributeCollection;
-                foreach (ObjectId id in collection)
-                {
-                    using AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
-                    string tag = attribute.Tag;
-                    string textstring = attribute.TextString;
-                    attributes[tag] = new(new(1000, textstring), id);
-                }
-            }
-
-            // Get xdata
-            using ResultBuffer xdata = dbObject.XData;
-            if (xdata != null)
-            {
-                string application = null;
-                foreach (TypedValue typedValue in xdata)
-                {
-                    // Registered Application
-                    if (typedValue.TypeCode == 1001)
-                        application = typedValue.Value.ToString().Replace("VIA_WD_", "");
-
-                    // Only accept strings or handles
-                    if ((typedValue.TypeCode == 1000
-                        || typedValue.TypeCode == 1005)
-                        && application != null)
-                    {
-                        string value = typedValue.Value.ToString();
-                        attributes[application] = new(new(typedValue.TypeCode, value), null);
-                        application = null;
-                    }
-                }
-            }
-
-            return attributes;
-        }
-
-        /// <summary>
-        /// Set Attributes of a <see cref="BlockReference"/>. If data in the dictionary does not have an <see cref="AttributeReference"/> to write to, it converts the data to XData and writes to the Block Reference.
-        /// </summary>
-        /// <param name="entity"></param>
-        /// <param name="attributes"></param>
-        /// <remarks>
-        /// <see cref="Dictionary{TKey, TValue}"/> uses the attribute tag as a key. The value of <see cref="Tuple{T, T}"/> is a typecode, string pair. The typecode can either be 1001 (for standard attribute textstring) or 1005 (for handle references).
-        /// </remarks>
-        public static void SetAttributes(this Entity entity, Dictionary<string, Attrib> attributes)
-        {
-            // Return if no data to write
-            if (attributes.Count == 0)
-                return;
-
-            bool started = entity.Database.GetOrStartTransaction(out Transaction transaction);
-            using Disposable disposable = new(transaction, started);
-
-            // Unlock layer prior to editing entity
-            using LayerTableRecord layer = transaction.GetObject(entity.LayerId, OpenMode.ForRead) as LayerTableRecord;
-            bool locked = layer.IsLocked;
-            if (locked)
+			// Get Attributes
+			if (dbObject.GetType() == typeof(BlockReference))
 			{
-                layer.UpgradeOpen();
-                layer.IsLocked = false;
+				BlockReference blockReference = dbObject as BlockReference;
+				AttributeCollection collection = blockReference.AttributeCollection;
+				foreach (ObjectId id in collection)
+				{
+					using AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
+					string tag = attribute.Tag;
+					string textstring = attribute.TextString;
+					attributes[tag] = new(new(1000, textstring), id);
+				}
 			}
 
-            // Make sure the block reference is able to be written
-            entity.UpgradeOpen();
-            Database database = entity.Database;
+			Dictionary<string, Attrib> xdata = dbObject.GetXData();
+			foreach (KeyValuePair<string, Attrib> item in xdata)
+			{
+				if (attributes.ContainsKey(item.Key))
+					continue;
 
-            // Switch database to allow attribute text alignment adjustments
-            using WorkingDatabaseSwitcher switcher = new(database);
+				attributes[item.Key] = new(item.Value, null);
+			}
 
-            // Attributes that have not been output yet
-            Dictionary<string, Attrib> overflowAttributes = new(attributes);
+			return attributes;
+		}
 
-            if (entity.GetType() == typeof(BlockReference))
-            {
-                // Get attribute collection
-                AttributeCollection collection = ((BlockReference)entity).AttributeCollection;
+		/// <summary>
+		/// Set Attributes of a <see cref="BlockReference"/>. If data in the dictionary does not have an <see cref="AttributeReference"/> to write to, it converts the data to XData and writes to the Block Reference.
+		/// </summary>
+		/// <param name="entity"></param>
+		/// <param name="attributes"></param>
+		/// <remarks>
+		/// <see cref="Dictionary{TKey, TValue}"/> uses the attribute tag as a key. The value of <see cref="Tuple{T, T}"/> is a typecode, string pair. The typecode can either be 1001 (for standard attribute textstring) or 1005 (for handle references).
+		/// </remarks>
+		public static void SetAttributes(this Entity entity, Dictionary<string, Attrib> attributes)
+		{
+			// Return if no data to write
+			if (attributes.Count == 0)
+				return;
 
-                // No attributes, just adjust current attribute alignment for good measure
-                if (attributes == null)
-                {
-                    foreach (ObjectId id in collection)
-                    {
-                        using AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
+			bool started = entity.Database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
 
-                        attribute.AdjustAlignment(database);
-                    }
+			// Unlock layer prior to editing entity
+			using LayerTableRecord layer = transaction.GetObject(entity.LayerId, OpenMode.ForRead) as LayerTableRecord;
+			bool locked = layer.IsLocked;
+			if (locked)
+			{
+				layer.UpgradeOpen();
+				layer.IsLocked = false;
+			}
 
-                    return;
-                }
+			// Make sure the block reference is able to be written
+			entity.UpgradeOpen();
+			Database database = entity.Database;
 
-                // input attribute value, adjust alignment
-                foreach (ObjectId id in collection)
-                {
-                    using AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
+			// Switch database to allow attribute text alignment adjustments
+			using WorkingDatabaseSwitcher switcher = new(database);
 
-                    if (attributes.ContainsKey(attribute.Tag))
-                    {
-                        overflowAttributes.Remove(attribute.Tag);
+			// Attributes that have not been output yet
+			Dictionary<string, Attrib> overflowAttributes = new(attributes);
 
-                        attribute.TextString = attributes[attribute.Tag].Text;
-                    }
+			if (entity.GetType() == typeof(BlockReference))
+			{
+				// Get attribute collection
+				AttributeCollection collection = ((BlockReference)entity).AttributeCollection;
 
-                    attribute.AdjustAlignment(database);
-                }
-            }
+				// No attributes, just adjust current attribute alignment for good measure
+				if (attributes == null)
+				{
+					foreach (ObjectId id in collection)
+					{
+						using AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
 
-            // Write remaining attribute data to XData
-            transaction.SetXData(entity, overflowAttributes);
+						attribute.AdjustAlignment(database);
+					}
 
-            if (locked)
-                layer.IsLocked = true;
-        }
+					return;
+				}
 
-        /// <summary>
-        /// Set Attributes of a <see cref="BlockReference"/>. If data in the dictionary does not have an <see cref="AttributeReference"/> to write to, it converts the data to XData and writes to the Block Reference.
-        /// </summary>
-        /// <param name="entity"></param>
-        /// <param name="attributes"></param>
-        /// <remarks>
-        /// <see cref="Dictionary{TKey, TValue}"/> uses the attribute tag as a key. The value of <see cref="Tuple{T, T}"/> is a typecode, string pair. The typecode can either be 1001 (for standard attribute textstring) or 1005 (for handle references).
-        /// </remarks>
-        public static void SetAttributes(this Entity entity, Dictionary<string, Tuple<Attrib, ObjectId?>> attributes)
-        {
-            // Make sure the block reference is able to be written
-            entity.UpgradeOpen();
-            Database database = entity.Database;
+				// input attribute value, adjust alignment
+				foreach (ObjectId id in collection)
+				{
+					using AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
 
-            bool started = database.GetOrStartTransaction(out Transaction transaction);
-            using Disposable disposable = new(transaction, started);
+					if (attributes.ContainsKey(attribute.Tag))
+					{
+						overflowAttributes.Remove(attribute.Tag);
 
-            // Switch database to allow attribute text alignment adjustments
-            using WorkingDatabaseSwitcher switcher = new(database);
+						attribute.TextString = attributes[attribute.Tag].Text;
+					}
 
-            // Attributes that have not been output yet
-            Dictionary<string, Attrib> overflowAttributes = new();
+					attribute.AdjustAlignment(database);
+				}
+			}
 
-            //Remove object ids
-            foreach (KeyValuePair<string, Tuple<Attrib, ObjectId?>> attribute in attributes)
-                overflowAttributes[attribute.Key] = attribute.Value.Item1;
+			// Write remaining attribute data to XData
+			transaction.SetXData(entity, overflowAttributes);
 
-            if (entity.GetType() == typeof(BlockReference))
-            {
-                // Get attribute collection
-                AttributeCollection collection = ((BlockReference)entity).AttributeCollection;
+			if (locked)
+				layer.IsLocked = true;
+		}
 
-                // No attributes, just adjust current attribute alignment for good measure
-                if (attributes == null)
-                {
-                    foreach (ObjectId id in collection)
-                    {
-                        using AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
+		/// <summary>
+		/// Set Attributes of a <see cref="BlockReference"/>. If data in the dictionary does not have an <see cref="AttributeReference"/> to write to, it converts the data to XData and writes to the Block Reference.
+		/// </summary>
+		/// <param name="entity"></param>
+		/// <param name="attributes"></param>
+		/// <remarks>
+		/// <see cref="Dictionary{TKey, TValue}"/> uses the attribute tag as a key. The value of <see cref="Tuple{T, T}"/> is a typecode, string pair. The typecode can either be 1001 (for standard attribute textstring) or 1005 (for handle references).
+		/// </remarks>
+		public static void SetAttributes(this Entity entity, Dictionary<string, Tuple<Attrib, ObjectId?>> attributes)
+		{
+			// Make sure the block reference is able to be written
+			entity.UpgradeOpen();
+			Database database = entity.Database;
 
-                        attribute.AdjustAlignment(database);
-                    }
+			bool started = database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
 
-                    return;
-                }
+			// Switch database to allow attribute text alignment adjustments
+			using WorkingDatabaseSwitcher switcher = new(database);
 
-                // input attribute value, adjust alignment
-                foreach (ObjectId id in collection)
-                {
-                    AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
+			// Attributes that have not been output yet
+			Dictionary<string, Attrib> overflowAttributes = new();
 
-                    if (attributes.ContainsKey(attribute.Tag))
-                    {
-                        overflowAttributes.Remove(attribute.Tag);
+			//Remove object ids
+			foreach (KeyValuePair<string, Tuple<Attrib, ObjectId?>> attribute in attributes)
+				overflowAttributes[attribute.Key] = attribute.Value.Item1;
 
-                        attribute.TextString = attributes[attribute.Tag].Item1.Text;
-                    }
+			if (entity.GetType() == typeof(BlockReference))
+			{
+				// Get attribute collection
+				AttributeCollection collection = ((BlockReference)entity).AttributeCollection;
 
-                    attribute.AdjustAlignment(database);
-                }
-            }
+				// No attributes, just adjust current attribute alignment for good measure
+				if (attributes == null)
+				{
+					foreach (ObjectId id in collection)
+					{
+						using AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
 
-            // Write remaining attribute data to XData
-            transaction.SetXData(entity, overflowAttributes);
-        }
-    }
+						attribute.AdjustAlignment(database);
+					}
+
+					return;
+				}
+
+				// input attribute value, adjust alignment
+				foreach (ObjectId id in collection)
+				{
+					AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
+
+					if (attributes.ContainsKey(attribute.Tag))
+					{
+						overflowAttributes.Remove(attribute.Tag);
+
+						attribute.TextString = attributes[attribute.Tag].Item1.Text;
+					}
+
+					attribute.AdjustAlignment(database);
+				}
+			}
+
+			// Write remaining attribute data to XData
+			transaction.SetXData(entity, overflowAttributes);
+		}
+	}
 }

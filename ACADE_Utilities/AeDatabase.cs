@@ -37,7 +37,14 @@ namespace ACADE_Utilities
 	{
 		#region Fields
 
+		/// <summary>
+		/// The database this class wraps
+		/// </summary>
 		protected readonly Database databaseField = new(true, true);
+
+		/// <summary>
+		/// The transaction used to perform operations on the database.
+		/// </summary>
 		protected readonly Transaction transactionField;
 
 		#endregion

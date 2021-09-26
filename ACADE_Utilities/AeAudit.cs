@@ -156,6 +156,8 @@ namespace ACADE_Utilities
 		/// </summary>
 		public void Audit()
 		{
+			XDataLibrary.AttributePrefix = "VIA_WD_";
+			XDataLibrary.AttributeSuffix = string.Empty;
 			bool started = aeDrawing.Database.GetOrStartTransaction(out Transaction transaction);
 			using Disposable disposable = new(transaction, started);
 

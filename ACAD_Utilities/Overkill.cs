@@ -251,7 +251,6 @@ namespace ACAD_Utilities
 		/// <summary>
 		/// Create a new instance of this class.
 		/// </summary>
-		/// <param name="transaction"></param>
 		/// <param name="database"></param>
 		public Overkill(Database database)
 		{

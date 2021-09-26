@@ -41,7 +41,7 @@ namespace ACADE_Utilities
 
 		private Point3d dragPoint = new();
 		private readonly AeCircuit circuit = null;
-		private ObjectId spaceId;
+		private ObjectId spaceIdField;
 
 		#endregion
 
@@ -56,7 +56,7 @@ namespace ACADE_Utilities
 			this.circuit = circuit;
 
 			Database database = Application.DocumentManager.MdiActiveDocument.Database;
-			spaceId = database.CurrentSpaceId;
+			spaceIdField = database.CurrentSpaceId;
 
 			bool started = database.GetOrStartTransaction(out Transaction transaction);
 			using Disposable disposable = new(transaction, started);
@@ -96,12 +96,12 @@ namespace ACADE_Utilities
 			if (circuit?.BlockReference == null)
 				return false;
 
-			if (!spaceId.Validate(false))
+			if (!spaceIdField.Validate(false))
 				return false;
 
 			circuit.BlockReference.Position = dragPoint;
 
-			Database database = spaceId.Database;
+			Database database = spaceIdField.Database;
 			if (!database.Validate(false, false))
 				return false;
 
@@ -111,7 +111,7 @@ namespace ACADE_Utilities
 			try
 			{
 				AeDrawing drawing = AeDrawing.GetOrCreate(database);
-				circuit.UpdateWireNo(spaceId, drawing.AeLadders);
+				circuit.UpdateWireNo(transaction, spaceIdField, drawing.AeLadders);
 
 				if (started)
 					transaction.Commit();

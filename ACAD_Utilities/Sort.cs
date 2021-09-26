@@ -378,7 +378,6 @@ namespace ACAD_Utilities
 		/// <summary>
 		/// Create a new instance of this class.
 		/// </summary>
-		/// <param name="transaction"></param>
 		/// <param name="database"></param>
 		private Sort(Database database)
 		{
@@ -477,7 +476,6 @@ namespace ACAD_Utilities
 		/// <summary>
 		/// Gets the sorted database object
 		/// </summary>
-		/// <param name="transaction">The transaction to perform operations.</param>
 		/// <param name="database">The database to sort.</param>
 		/// <returns></returns>
 		public static Sort GetSort(Database database)

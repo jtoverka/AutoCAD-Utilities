@@ -286,6 +286,8 @@ namespace ACADE_Utilities
 
 				using BlockReference blockReference = transaction.GetObject(blockId, OpenMode.ForRead) as BlockReference;
 
+				XDataLibrary.AttributePrefix = "VIA_WD_";
+				XDataLibrary.AttributeSuffix = string.Empty;
 				blockAttributes[blockId] = blockReference.GetAttributes();
 
 				if (blockReference.GetEffectiveName().Equals("WDDOT", StringComparison.OrdinalIgnoreCase))

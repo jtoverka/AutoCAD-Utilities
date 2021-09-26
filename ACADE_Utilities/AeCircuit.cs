@@ -122,6 +122,8 @@ namespace ACADE_Utilities
 		/// <param name="blockId">The block table record circuit.</param>
 		public AeCircuit(ObjectId blockId)
 		{
+			XDataLibrary.AttributePrefix = "VIA_WD_";
+			XDataLibrary.AttributeSuffix = string.Empty;
 			blockId.Validate(RXClass.GetClass(typeof(BlockTableRecord)), true);
 
 			Database database = blockId.Database;
@@ -255,15 +257,15 @@ namespace ACADE_Utilities
 			BlockReference.Position = Point3d.Origin;
 			CircuitJig jig = new(this);
 			
-			UpdateCircuitKeys();
+			UpdateCircuitKeys(transaction);
 
 			PromptResult result = editor.Drag(jig);
 
 			if (result.Status != PromptStatus.OK)
 				return new ObjectIdCollection();
 
-			UpdateWireNo(document.Database.CurrentSpaceId, aeLadders);
-			UpdateLinkTerms();
+			UpdateWireNo(transaction, document.Database.CurrentSpaceId, aeLadders);
+			UpdateLinkTerms(transaction);
 
 			using BlockTableRecord space = transaction.GetObject(document.Database.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
 			
@@ -314,9 +316,9 @@ namespace ACADE_Utilities
 
 			BlockReference.Position = point;
 
-			UpdateCircuitKeys();
-			UpdateLinkTerms();
-			UpdateWireNo(spaceId, aeLadders);
+			UpdateCircuitKeys(transaction);
+			UpdateLinkTerms(transaction);
+			UpdateWireNo(transaction, spaceId, aeLadders);
 
 			space.AppendEntity(BlockReference);
 			transaction.AddNewlyCreatedDBObject(BlockReference, true);
@@ -339,20 +341,13 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Update all of the wire numbers in the circuit.
 		/// </summary>
+		/// <param name="transaction">The database transaction to perform operations within.</param>
 		/// <param name="spaceId">The space to get wire number ladders from.</param>
 		/// <param name="aeLadders">The list of wire number ladders.</param>
-		public void UpdateWireNo(ObjectId spaceId, IList<AeLadder> aeLadders)
+		public void UpdateWireNo(Transaction transaction, ObjectId spaceId, IList<AeLadder> aeLadders)
 		{
 			if (!spaceId.Validate(false))
 				return;
-
-			Database database = spaceId.Database;
-
-			if (!database.Validate(false, false))
-				return;
-
-			bool started = database.GetOrStartTransaction(out Transaction transaction);
-			using Disposable disposable = new(transaction, started);
 
 			Point3d point = BlockReference.Position;
 
@@ -403,13 +398,11 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Update the circuit values.
 		/// </summary>
-		public void UpdateCircuitKeys()
+		/// <param name="transaction">The database transaction to perform operations within.</param>
+		public void UpdateCircuitKeys(Transaction transaction)
 		{
-			Database database = BlockReference.Database;
-
-			bool started = database.GetOrStartTransaction(out Transaction transaction);
-			using Disposable disposable = new(transaction, started);
-
+			XDataLibrary.AttributePrefix = "VIA_WD_";
+			XDataLibrary.AttributeSuffix = string.Empty;
 			if (AttributeKeys == null || BlockKeys == null)
 				return;
 
@@ -518,7 +511,7 @@ namespace ACADE_Utilities
 
 					circuit.AttributeKeys = AttributeKeys;
 					circuit.BlockKeys = BlockKeys;
-					circuit.UpdateCircuitKeys();
+					circuit.UpdateCircuitKeys(transaction);
 				}
 			}
 		}
@@ -526,13 +519,11 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Update all of the terminals with fresh linkterm values.
 		/// </summary>
-		public void UpdateLinkTerms()
+		/// <param name="transaction">The database transaction to perform operations within.</param>
+		public void UpdateLinkTerms(Transaction transaction)
 		{
-			Database database = BlockReference.Database;
-
-			bool started = database.GetOrStartTransaction(out Transaction transaction);
-			using Disposable disposable = new(transaction, started);
-
+			XDataLibrary.AttributePrefix = "VIA_WD_";
+			XDataLibrary.AttributeSuffix = string.Empty;
 			Dictionary<string, Attrib> attributes = new();
 			foreach (ObjectId id in linkTermCollection)
 			{
@@ -565,6 +556,8 @@ namespace ACADE_Utilities
 		/// <returns></returns>
 		private ObjectId FindWireNoAttribute(ObjectId attributeId)
 		{
+			XDataLibrary.AttributePrefix = "VIA_WD_";
+			XDataLibrary.AttributeSuffix = string.Empty;
 			Database database = attributeId.Database;
 
 			bool started = database.GetOrStartTransaction(out Transaction transaction);
