@@ -25,7 +25,6 @@
 */
 
 using ACAD_Utilities;
-using Autodesk.AutoCAD.ApplicationServices.Core;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Runtime;
 using System.Windows;
@@ -37,6 +36,10 @@ namespace ACADE_Utilities
 	/// </summary>
 	public static class AeCommands
 	{
+		/// <summary>
+		/// Represents the Audit Command
+		/// </summary>
+		[CommandMethod("AeAudit")]
 		public static void Audit()
 		{
 			try

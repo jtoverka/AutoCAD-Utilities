@@ -38,8 +38,6 @@ namespace ACAD_Utilities
 		/// <summary>
 		/// Replicates the overkill command.
 		/// </summary>
-		/// <param name="args"></param>
-		/// <returns></returns>
 		[CommandMethod("AcOverkill")]
 		public static void OverkillCommand()
 		{
