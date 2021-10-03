@@ -168,25 +168,38 @@ namespace ACAD_Utilities
         /// <returns><c>true</c> if the point in on or near the line within a specified tolerance; otherwise <c>false</c>.</returns>
         public static bool LineMember(Point3d point, Tuple<Point3d, Point3d> line, double tolerance)
         {
+            return LineMember(point, line.Item1, line.Item2, tolerance);
+        }
+
+        /// <summary>
+        /// Determines if a point is on or near the line with a specified tolerance.
+        /// </summary>
+        /// <param name="point">The point to check.</param>
+        /// <param name="startPoint">The start point of the line.</param>
+        /// <param name="endPoint">The end point of the line.</param>
+        /// <param name="tolerance">The allowable distance between the point and the nearest point on the line.</param>
+        /// <returns><c>true</c> if the point in on or near the line within a specified tolerance; otherwise <c>false</c>.</returns>
+        public static bool LineMember(Point3d point, Point3d startPoint, Point3d endPoint, double tolerance)
+        {
             double x0 = point.X;
             double y0 = point.Y;
             double x1;
             double y1;
             double x2;
             double y2;
-            if (line.Item1.X < line.Item2.X)
+            if (startPoint.X < endPoint.X)
             {
-                x1 = line.Item1.X;
-                y1 = line.Item1.Y;
-                x2 = line.Item2.X;
-                y2 = line.Item2.Y;
+                x1 = startPoint.X;
+                y1 = startPoint.Y;
+                x2 = endPoint.X;
+                y2 = endPoint.Y;
             }
             else
             {
-                x1 = line.Item2.X;
-                y1 = line.Item2.Y;
-                x2 = line.Item1.X;
-                y2 = line.Item1.Y;
+                x1 = endPoint.X;
+                y1 = endPoint.Y;
+                x2 = startPoint.X;
+                y2 = startPoint.Y;
             }
             double distanceToEndpoint1;
             double distanceToEndpoint2;

@@ -24,19 +24,16 @@
 *For more information, please refer to <https://unlicense.org>
 */
 
+using ACAD_Utilities;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
-using ACAD_Utilities;
+using Autodesk.AutoCAD.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Application = Autodesk.AutoCAD.ApplicationServices.Core.Application;
-using System.IO;
-using System.Windows;
-using Autodesk.AutoCAD.Runtime;
 
 namespace ACADE_Utilities
 {
@@ -123,7 +120,7 @@ namespace ACADE_Utilities
 		public AeCircuit(ObjectId blockId)
 		{
 			using AeXData aeXData = new();
-			blockId.Validate(RXClass.GetClass(typeof(BlockTableRecord)), true);
+			blockId.Validate(RXObject.GetClass(typeof(BlockTableRecord)), true);
 
 			Database database = blockId.Database;
 
@@ -307,9 +304,6 @@ namespace ACADE_Utilities
 
 			bool started = database.GetOrStartTransaction(out Transaction transaction);
 			using Disposable disposable = new(transaction, started);
-
-			if (!transaction.Validate(false,false))
-				return blockIds;
 
 			using BlockTableRecord space = transaction.GetObject(spaceId, OpenMode.ForWrite) as BlockTableRecord;
 

@@ -143,6 +143,12 @@ namespace ACAD_Utilities
 				layer.IsLocked = false;
 			}
 
+			using Disposable exitMethod = new(() => 
+			{
+				if (locked)
+					layer.IsLocked = true;
+			});
+
 			// Make sure the block reference is able to be written
 			entity.UpgradeOpen();
 			Database database = entity.Database;
@@ -189,9 +195,6 @@ namespace ACAD_Utilities
 
 			// Write remaining attribute data to XData
 			transaction.SetXData(entity, overflowAttributes);
-
-			if (locked)
-				layer.IsLocked = true;
 		}
 
 		/// <summary>
@@ -204,59 +207,12 @@ namespace ACAD_Utilities
 		/// </remarks>
 		public static void SetAttributes(this Entity entity, Dictionary<string, Tuple<Attrib, ObjectId?>> attributes)
 		{
-			// Make sure the block reference is able to be written
-			entity.UpgradeOpen();
-			Database database = entity.Database;
+			Dictionary<string, Attrib> dictionary = new();
 
-			bool started = database.GetOrStartTransaction(out Transaction transaction);
-			using Disposable disposable = new(transaction, started);
+			foreach (var item in attributes)
+				dictionary[item.Key] = item.Value.Item1;
 
-			// Switch database to allow attribute text alignment adjustments
-			using WorkingDatabaseSwitcher switcher = new(database);
-
-			// Attributes that have not been output yet
-			Dictionary<string, Attrib> overflowAttributes = new();
-
-			//Remove object ids
-			foreach (KeyValuePair<string, Tuple<Attrib, ObjectId?>> attribute in attributes)
-				overflowAttributes[attribute.Key] = attribute.Value.Item1;
-
-			if (entity.GetType() == typeof(BlockReference))
-			{
-				// Get attribute collection
-				AttributeCollection collection = ((BlockReference)entity).AttributeCollection;
-
-				// No attributes, just adjust current attribute alignment for good measure
-				if (attributes == null)
-				{
-					foreach (ObjectId id in collection)
-					{
-						using AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
-
-						attribute.AdjustAlignment(database);
-					}
-
-					return;
-				}
-
-				// input attribute value, adjust alignment
-				foreach (ObjectId id in collection)
-				{
-					AttributeReference attribute = transaction.GetObject(id, OpenMode.ForWrite) as AttributeReference;
-
-					if (attributes.ContainsKey(attribute.Tag))
-					{
-						overflowAttributes.Remove(attribute.Tag);
-
-						attribute.TextString = attributes[attribute.Tag].Item1.Text;
-					}
-
-					attribute.AdjustAlignment(database);
-				}
-			}
-
-			// Write remaining attribute data to XData
-			transaction.SetXData(entity, overflowAttributes);
+			entity.SetAttributes(dictionary);
 		}
 	}
 }

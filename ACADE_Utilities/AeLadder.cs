@@ -42,7 +42,6 @@ namespace ACADE_Utilities
 
 		private readonly ObjectId wdmIdField = ObjectId.Null;
 		private readonly ObjectId wdmlrIdField = ObjectId.Null;
-		private readonly Transaction transactionField = null;
 
 		private Point3d wdmlrPointField = Point3d.Origin;
 		private double rungDist = 1;
@@ -80,13 +79,19 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Initializes a new instance of this class.
 		/// </summary>
-		public AeLadder(Transaction transaction, ObjectId wdmId, ObjectId wdmlrId)
+		public AeLadder(ObjectId wdmId, ObjectId wdmlrId)
 		{
-			transaction.Validate(true, true);
 			wdmId.Validate(Sort.rxBlockReference, true);
 			wdmlrId.Validate(Sort.rxBlockReference, true);
 
-			transactionField = transaction;
+			if (wdmId.Database != wdmlrId.Database)
+				throw new ArgumentException("The two ladder blocks do not reside in the same database.");
+
+			wdmId.Database.Validate(true, true);
+
+			bool started = wdmId.Database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
+
 			wdmIdField = wdmId;
 			wdmlrIdField = wdmlrId;
 
@@ -126,9 +131,12 @@ namespace ACADE_Utilities
 		/// </summary>
 		public void Refresh()
 		{
+			bool started = wdmIdField.Database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(transaction, started);
+
 			using AeXData aeXData = new();
-			using BlockReference wdm = transactionField.GetObject(wdmIdField, OpenMode.ForRead) as BlockReference;
-			using BlockReference wdmlr = transactionField.GetObject(wdmlrIdField, OpenMode.ForRead) as BlockReference;
+			using BlockReference wdm = transaction.GetObject(wdmIdField, OpenMode.ForRead) as BlockReference;
+			using BlockReference wdmlr = transaction.GetObject(wdmlrIdField, OpenMode.ForRead) as BlockReference;
 			Dictionary<string, Attrib> wdm_Attributes = wdm.GetAttributes();
 			Dictionary<string, Attrib> wdmlr_Attributes = wdmlr.GetAttributes();
 

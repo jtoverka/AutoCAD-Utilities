@@ -41,8 +41,6 @@ namespace ACAD_Utilities
 		/// <returns><c>true</c> if a new transaction was started and needs to be disposed by the caller; otherwise, false.</returns>
 		public static bool GetOrStartTransaction(this Database database, out Transaction transaction)
 		{
-			database.Validate(true, true);
-
 			TransactionManager manager = database.TransactionManager;
 			bool start = manager.TopTransaction == null;
 

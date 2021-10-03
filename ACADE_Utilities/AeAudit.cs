@@ -45,6 +45,7 @@ namespace ACADE_Utilities
 		private bool bogusWireNumberField = true;
 		private bool zeroLengthWiresField = true;
 		private bool wireNumberFloaterField = true;
+		private double toleranceField = 0.025;
 
 		#endregion
 
@@ -118,6 +119,22 @@ namespace ACADE_Utilities
 			}
 		}
 
+		/// <summary>
+		/// Gets or sets the distance tolerance between wire number blocks and wire lines.
+		/// </summary>
+		public double Tolerance
+		{
+			get { return toleranceField; }
+			set
+			{
+				if (toleranceField == value)
+					return;
+
+				toleranceField = value;
+				PropertyChanged?.Invoke(this, new(nameof(Tolerance)));
+			}
+		}
+
 		#endregion
 
 		#region Constructors
@@ -169,42 +186,52 @@ namespace ACADE_Utilities
 				ObjectId id = ids[i];
 
 				using Line line = transaction.GetObject(id, OpenMode.ForRead) as Line;
-				if (ZeroLengthWires)
+				var attributes = line.GetAttributes();
+
+				bool hasWnptr = attributes.TryGetValue("WNPTR", out Attrib value);
+				string wnptr = value?.Text ?? string.Empty;
+				ObjectId wirenoId = ObjectId.Null;
+
+				if (long.TryParse(wnptr, NumberStyles.HexNumber, null, out long handleId))
 				{
-					if (line.Length == 0)
-					{
-						line.UpgradeOpen();
-						line.Erase();
-					}
+					Handle handle = new(handleId);
+					line.Database.TryGetObjectId(handle, out wirenoId);
 				}
 
-				if (BogusWireNumber)
+				if (ZeroLengthWires && line.Length == 0)
 				{
-					if (!line.Database.Validate(false, false))
-						continue;
-					
-					var attributes = line.GetAttributes();
-					if (!attributes.ContainsKey("WNPTR"))
-						continue;
+					line.UpgradeOpen();
+					line.Erase();
+				}
 
-					if (long.TryParse(attributes["WNPTR"].Text, NumberStyles.HexNumber, null, out long handleId))
+				if (BogusWireNumber && hasWnptr && !wirenoId.Validate(false))
+				{
+					using ResultBuffer buffer = new(new TypedValue(1001, "VIA_WD_WNPTR"));
+					line.UpgradeOpen();
+					line.XData = buffer;
+				}
+				/*
+				if (WireNumberFloater && hasWnptr && wirenoId.Validate(false))
+				{
+					using BlockReference wireno = transaction.GetObject(wirenoId, OpenMode.ForRead) as BlockReference;
+
+					if (!GeometricLibrary.LineMember(wireno.Position, line.StartPoint, line.EndPoint, Tolerance))
 					{
-						Handle handle = new(handleId);
-						ObjectId wirenoId = ObjectId.Null;
-						line.Database.TryGetObjectId(handle, out wirenoId);
 
-						if (!wirenoId.Validate(false))
-						{
-							using ResultBuffer buffer = new(new TypedValue(1001, "VIA_WD_WNPTR"));
-							line.UpgradeOpen();
-							line.XData = buffer;
-						}
 					}
 				}
+				*/
 			}
+			/*
+			ids = aeDrawing[AeObject.Wireno].ToArray();
+			for (int i = 0; i < ids.Length; i++)
+			{
+				ObjectId id = ids[i];
 
-			if (started)
-				transaction.Commit();
+				using BlockReference wireno = transaction.GetObject(id, OpenMode.ForRead) as BlockReference;
+
+			}
+			*/
 		}
 
 		#endregion

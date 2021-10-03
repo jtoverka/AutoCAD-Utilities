@@ -119,9 +119,6 @@ namespace ACADE_Utilities
 			bool started = database.GetOrStartTransaction(out Transaction transaction);
 			using Disposable disposable = new(transaction, started);
 
-			transaction.Validate(false, true);
-			database.Validate(true, true);
-
 			sortField = Sort.GetSort(database);
 			this.database = database;
 
@@ -154,8 +151,6 @@ namespace ACADE_Utilities
 		{
 			bool started = drawing.Database.GetOrStartTransaction(out Transaction transaction);
 			using Disposable disposable = new(transaction, started);
-
-			transaction.Validate(false, true);
 
 			sortField = drawing;
 
@@ -384,9 +379,6 @@ namespace ACADE_Utilities
 			bool started = database.GetOrStartTransaction(out Transaction transaction);
 			using Disposable disposable = new(transaction, started);
 
-			if (!transaction.Validate(false, false))
-				return;
-
 			SortLines(lineIds, transaction);
 			lineIds.Clear();
 
@@ -414,7 +406,7 @@ namespace ACADE_Utilities
 			{
 				if (id.Validate(false))
 				{
-					AeLadder aeLadder = new(transaction, wdmId, id);
+					AeLadder aeLadder = new(wdmId, id);
 					aeLadders.Add(aeLadder);
 				}
 			}
