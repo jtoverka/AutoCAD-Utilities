@@ -285,6 +285,9 @@ namespace ACADE_Utilities
 			BlockReference.Erase();
 			BlockReference.Dispose();
 
+			using BlockTableRecord blockTableRecord = transaction.GetObject(blockId, OpenMode.ForWrite) as BlockTableRecord;
+			blockTableRecord.Erase();
+
 			return blockIds;
 		}
 
@@ -332,6 +335,9 @@ namespace ACADE_Utilities
 			BlockReference.UpgradeOpen();
 			BlockReference.Erase();
 			BlockReference.Dispose();
+
+			using BlockTableRecord blockTableRecord = transaction.GetObject(blockId, OpenMode.ForWrite) as BlockTableRecord;
+			blockTableRecord.Erase();
 
 			return blockIds;
 		}
