@@ -79,11 +79,11 @@ namespace ACADE_Utilities
 		/// </summary>
 		public void Dispose()
 		{
-			if (databaseField.Validate(false, false))
-				databaseField.Dispose();
-
 			if (transactionField.Validate(false, false))
 				transactionField.Dispose();
+
+			if (databaseField.Validate(false, false))
+				databaseField.Dispose();
 		}
 
 		/// <summary>

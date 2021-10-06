@@ -32,6 +32,7 @@ using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -48,6 +49,9 @@ namespace ACADE_Utilities
 		private static readonly Regex terminal = new("^X[0-9]TERM[0-9]{2}");
 		private static readonly Regex blockTag = new("TAG");
 		private static readonly Regex sigCode = new("^SIGCODE");
+
+		// The block definition of the block reference.
+		private readonly ObjectId blockId;
 
 		// Find and replace sub blocks if key $BLOCKREPLACE$ is found
 		private readonly HashSet<ObjectId> blocks = new();
@@ -121,6 +125,7 @@ namespace ACADE_Utilities
 		{
 			using AeXData aeXData = new();
 			blockId.Validate(RXObject.GetClass(typeof(BlockTableRecord)), true);
+			this.blockId = blockId;
 
 			Database database = blockId.Database;
 
@@ -248,20 +253,20 @@ namespace ACADE_Utilities
 			Editor editor = Active.Editor;
 
 			bool started = document.Database.GetOrStartTransaction(out Transaction transaction);
-			using Disposable disposable = new(transaction, started);
+			using Disposable disposable = new(() => { transaction.Finish(); }, started);
 
 			BlockReference.Position = Point3d.Origin;
 			CircuitJig jig = new(this);
-			
-			UpdateCircuitKeys(transaction);
+
+			UpdateCircuitKeys();
 
 			PromptResult result = editor.Drag(jig);
 
 			if (result.Status != PromptStatus.OK)
 				return new ObjectIdCollection();
 
-			UpdateWireNo(transaction, document.Database.CurrentSpaceId, aeLadders);
-			UpdateLinkTerms(transaction);
+			UpdateWireNo(document.Database.CurrentSpaceId, aeLadders);
+			UpdateLinkTerms();
 
 			using BlockTableRecord space = transaction.GetObject(document.Database.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
 			
@@ -303,15 +308,15 @@ namespace ACADE_Utilities
 				return blockIds;
 
 			bool started = database.GetOrStartTransaction(out Transaction transaction);
-			using Disposable disposable = new(transaction, started);
+			using Disposable disposable = new(()=>{ transaction.Finish(); }, started);
 
 			using BlockTableRecord space = transaction.GetObject(spaceId, OpenMode.ForWrite) as BlockTableRecord;
 
 			BlockReference.Position = point;
 
-			UpdateCircuitKeys(transaction);
-			UpdateLinkTerms(transaction);
-			UpdateWireNo(transaction, spaceId, aeLadders);
+			UpdateCircuitKeys();
+			UpdateLinkTerms();
+			UpdateWireNo(spaceId, aeLadders);
 
 			space.AppendEntity(BlockReference);
 			transaction.AddNewlyCreatedDBObject(BlockReference, true);
@@ -334,13 +339,15 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Update all of the wire numbers in the circuit.
 		/// </summary>
-		/// <param name="transaction">The database transaction to perform operations within.</param>
 		/// <param name="spaceId">The space to get wire number ladders from.</param>
 		/// <param name="aeLadders">The list of wire number ladders.</param>
-		public void UpdateWireNo(Transaction transaction, ObjectId spaceId, IList<AeLadder> aeLadders)
+		public void UpdateWireNo(ObjectId spaceId, IList<AeLadder> aeLadders)
 		{
 			if (!spaceId.Validate(false))
 				return;
+
+			bool started = blockId.Database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(() => { transaction.Commit(); transaction.Dispose(); }, started);
 
 			Point3d point = BlockReference.Position;
 
@@ -391,9 +398,11 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Update the circuit values.
 		/// </summary>
-		/// <param name="transaction">The database transaction to perform operations within.</param>
-		public void UpdateCircuitKeys(Transaction transaction)
+		public void UpdateCircuitKeys()
 		{
+			bool started = blockId.Database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(() => { transaction.Finish(); }, started);
+
 			using AeXData aeXData = new();
 			if (AttributeKeys == null || BlockKeys == null)
 				return;
@@ -503,7 +512,45 @@ namespace ACADE_Utilities
 
 					circuit.AttributeKeys = AttributeKeys;
 					circuit.BlockKeys = BlockKeys;
-					circuit.UpdateCircuitKeys(transaction);
+					circuit.UpdateCircuitKeys();
+				}
+			}
+
+			if (AttributeKeys.ContainsKey("$XREF$"))
+			{
+				string filepath = AttributeKeys["$XREF$"];
+
+				AttributeKeys.TryGetValue("$ROTATE$", out string rotation);
+				rotation ??= "0";
+				
+				double rotate = 0;
+				if (rotation.Equals("90"))
+					rotate = 1.570796;
+				else if (rotation.Equals("180"))
+					rotate = 3.141593;
+				else if (rotation.Equals("270"))
+					rotate = 4.712389;
+
+				if (Path.GetExtension(filepath).Equals(string.Empty))
+					filepath = filepath + ".dwg";
+
+				string name = "XREF-" + Path.GetFileNameWithoutExtension(filepath);
+				
+				blockId.Database.XrefEditEnabled = true;
+
+				foreach (ObjectId objectId in blockReferences)
+				{
+					using BlockReference blockReference = transaction.GetObject(objectId, OpenMode.ForRead) as BlockReference;
+					using BlockTableRecord record = transaction.GetObject(blockReference.BlockTableRecord, OpenMode.ForRead) as BlockTableRecord;
+
+					if (record.IsFromExternalReference)
+					{
+						blockReference.UpgradeOpen();
+						record.UpgradeOpen();
+						record.PathName = filepath;
+						record.Name = name;
+						blockReference.Rotation = rotate;
+					}
 				}
 			}
 		}
@@ -511,9 +558,11 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Update all of the terminals with fresh linkterm values.
 		/// </summary>
-		/// <param name="transaction">The database transaction to perform operations within.</param>
-		public void UpdateLinkTerms(Transaction transaction)
+		public void UpdateLinkTerms()
 		{
+			bool started = blockId.Database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(() => { transaction.Commit(); transaction.Dispose(); }, started);
+
 			using AeXData aeXData = new();
 			Dictionary<string, Attrib> attributes = new();
 			foreach (ObjectId id in linkTermCollection)

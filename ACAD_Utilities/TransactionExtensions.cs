@@ -51,5 +51,15 @@ namespace ACAD_Utilities
 
 			return start;
 		}
+
+		/// <summary>
+		/// Commit and dispose of the transaction.
+		/// </summary>
+		/// <param name="transaction">The transaction to perform database operations.</param>
+		public static void Finish(this Transaction transaction)
+		{
+			transaction.Commit();
+			transaction.Dispose();
+		}
 	}
 }

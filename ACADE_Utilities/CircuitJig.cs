@@ -106,15 +106,12 @@ namespace ACADE_Utilities
 				return false;
 
 			bool started = database.GetOrStartTransaction(out Transaction transaction);
-			using Disposable disposable = new(transaction, started);
+			using Disposable disposable = new(()=> { transaction.Finish(); }, started);
 
 			try
 			{
 				AeDrawing drawing = AeDrawing.GetOrCreate(database);
-				circuit.UpdateWireNo(transaction, spaceIdField, drawing.AeLadders);
-
-				if (started)
-					transaction.Commit();
+				circuit.UpdateWireNo(spaceIdField, drawing.AeLadders);
 			}
 			catch { }
 

@@ -40,6 +40,7 @@ namespace ACAD_Utilities
 			flag,
 			function,
 			action,
+			conditiionalAction,
 		}
 
 		#endregion
@@ -93,6 +94,18 @@ namespace ACAD_Utilities
 			disposeActionField = action ?? throw new ArgumentNullException("The action cannot be null");
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="action"></param>
+		/// <param name="dispose"></param>
+		public Disposable(Action action, bool dispose)
+		{
+			typeField = DisposableType.conditiionalAction;
+			disposeActionField = action ?? throw new ArgumentNullException("The action cannot be null");
+			disposeField = dispose;
+		}
+
 		#endregion
 
 		#region Methods
@@ -114,6 +127,10 @@ namespace ACAD_Utilities
 					break;
 				case DisposableType.action:
 					disposeActionField.Invoke();
+					break;
+				case DisposableType.conditiionalAction:
+					if (disposeField)
+						disposeActionField.Invoke();
 					break;
 				default:
 					break;
