@@ -243,7 +243,7 @@ namespace ACADE_Utilities
 		public void Insert(AeCircuit circuit, ObjectId spaceId, Point3d point)
 		{
 			bool started = spaceId.Database.GetOrStartTransaction(out Transaction transaction);
-			using Disposable disposable = new(transaction, started);
+			using Disposable disposable = new(()=> { transaction.Finish(); }, started);
 
 			Refresh();
 
