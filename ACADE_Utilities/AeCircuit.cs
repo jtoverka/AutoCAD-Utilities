@@ -531,11 +531,11 @@ namespace ACADE_Utilities
 				
 				double rotate = 0;
 				if (rotation.Equals("90"))
-					rotate = 1.570796;
+					rotate = 1.57079633;
 				else if (rotation.Equals("180"))
-					rotate = 3.141593;
+					rotate = 3.14159265;
 				else if (rotation.Equals("270"))
-					rotate = 4.712389;
+					rotate = 4.71238898;
 
 				if (Path.GetExtension(filepath).Equals(string.Empty))
 					filepath = filepath + ".dwg";
@@ -543,6 +543,8 @@ namespace ACADE_Utilities
 				string name = "XREF-" + Path.GetFileNameWithoutExtension(filepath);
 				
 				blockId.Database.XrefEditEnabled = true;
+
+				using BlockTable blockTable = transaction.GetObject(blockId.Database.BlockTableId, OpenMode.ForRead) as BlockTable;
 
 				foreach (ObjectId objectId in blockReferences)
 				{
@@ -552,10 +554,28 @@ namespace ACADE_Utilities
 					if (record.IsFromExternalReference)
 					{
 						blockReference.UpgradeOpen();
-						record.UpgradeOpen();
-						record.PathName = filepath;
-						record.Name = name;
 						blockReference.Rotation = rotate;
+
+						if (!blockTable.Has(name))
+						{
+							record.UpgradeOpen();
+							record.PathName = filepath;
+							record.Name = name;
+						}
+						else
+						{
+							using BlockTableRecord existing = transaction.GetObject(blockTable[name], OpenMode.ForRead) as BlockTableRecord;
+							if (existing.IsFromExternalReference)
+							{
+								using BlockReference reference = new(blockReference.Position, blockTable[name]);
+								reference.Rotation = rotate;
+								blockReference.Erase();
+
+								using BlockTableRecord block = transaction.GetObject(blockId, OpenMode.ForWrite) as BlockTableRecord;
+								block.AppendEntity(reference);
+								transaction.AddNewlyCreatedDBObject(reference, true);
+							}
+						}
 					}
 				}
 			}
