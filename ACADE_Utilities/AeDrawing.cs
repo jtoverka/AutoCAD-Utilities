@@ -461,14 +461,14 @@ namespace ACADE_Utilities
 		/// </summary>
 		/// <param name="sender">The object that invoked the event.</param>
 		/// <param name="e">The event parameters.</param>
-		private void SortField_ObjectErased(object sender, SortEventArgs e) => AddObject(e.ObjectId);
+		private void SortField_ObjectErased(object sender, SortEventArgs e) => RemoveObject(e.ObjectId); 
 
 		/// <summary>
 		/// Object reappended from drawing.
 		/// </summary>
 		/// <param name="sender">The object that invoked the event.</param>
 		/// <param name="e">The event parameters.</param>
-		private void SortField_ObjectReappended(object sender, SortEventArgs e) => RemoveObject(e.ObjectId);
+		private void SortField_ObjectReappended(object sender, SortEventArgs e) => AddObject(e.ObjectId);
 
 		/// <summary>
 		/// Object unappended from drawing.
