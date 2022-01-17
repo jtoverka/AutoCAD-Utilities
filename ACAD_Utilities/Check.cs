@@ -42,7 +42,7 @@ namespace ACAD_Utilities
 		/// </summary>
 		/// <param name="id">ObjectId to check.</param>
 		/// <param name="error">Flag to throw error.</param>
-		/// <returns>True if the objectId is valid; Otherwise, false.</returns>
+		/// <returns><see langword="true"/> if the objectId is valid; Otherwise, <see langword="false"/>.</returns>
 		/// <exception cref="NullReferenceException"/>
 		/// <exception cref="InvalidOperationException"/>
 		public static bool Validate(this ObjectId id, bool error)
@@ -73,7 +73,7 @@ namespace ACAD_Utilities
 		/// <param name="id">ObjectId to check.</param>
 		/// <param name="objectClass">RXClass to compare to.</param>
 		/// <param name="error">Flag to throw error.</param>
-		/// <returns>True if the objectId is valid; Otherwise, false.</returns>
+		/// <returns><see langword="true"/> if the objectId is valid; Otherwise, <see langword="false"/>.</returns>
 		/// <exception cref="NullReferenceException"/>
 		/// <exception cref="AccessViolationException"/>
 		/// <exception cref="ArgumentException"/>
@@ -107,7 +107,7 @@ namespace ACAD_Utilities
 		/// </summary>
 		/// <param name="transaction">Transaction to check.</param>
 		/// <param name="argument">Flag whether it is an argument check.</param>
-		/// <returns>True if the transaction is valid; Otherwise, false.</returns>
+		/// <returns><see langword="true"/> if the transaction is valid; Otherwise, <see langword="false"/>.</returns>
 		/// <exception cref="ArgumentNullException"/>
 		/// <exception cref="NullReferenceException"/>
 		/// <exception cref="ObjectDisposedException"/>
@@ -136,7 +136,7 @@ namespace ACAD_Utilities
 		/// <param name="transaction">Transaction to check.</param>
 		/// <param name="argument">Flag whether it is an argument check.</param>
 		/// <param name="error">Flag whether to throw an error.</param>
-		/// <returns>True if the transaction is valid; Otherwise, false.</returns>
+		/// <returns><see langword="true"/> if the transaction is valid; Otherwise, <see langword="false"/>.</returns>
 		/// <exception cref="ArgumentNullException"/>
 		/// <exception cref="NullReferenceException"/>
 		/// <exception cref="ObjectDisposedException"/>
@@ -172,7 +172,7 @@ namespace ACAD_Utilities
 		/// </summary>
 		/// <param name="database">Database to check.</param>
 		/// <param name="argument">Flag whether it is an argument check.</param>
-		/// <returns>True if the database is valid; Otherwise, false.</returns>
+		/// <returns><see langword="true"/> if the database is valid; Otherwise, <see langword="false"/>.</returns>
 		/// <exception cref="ArgumentNullException"/>
 		/// <exception cref="NullReferenceException"/>
 		/// <exception cref="InvalidOperationException"/>
@@ -205,7 +205,7 @@ namespace ACAD_Utilities
 		/// <param name="database">Database to check.</param>
 		/// <param name="argument">Flag whether it is an argument check.</param>
 		/// <param name="error">Flag whether to throw an error.</param>
-		/// <returns>True if the database is valid; Otherwise, false.</returns>
+		/// <returns><see langword="true"/> if the database is valid; Otherwise, <see langword="false"/>.</returns>
 		/// <exception cref="ArgumentNullException"/>
 		/// <exception cref="NullReferenceException"/>
 		/// <exception cref="InvalidOperationException"/>

@@ -114,7 +114,7 @@ namespace ACAD_Utilities
 		/// Determines whether this instance and a specified object, have the same value.
 		/// </summary>
 		/// <param name="obj">The object to compare in this instance.</param>
-		/// <returns>Returns <c>true</c> if the object is equivalent to the specified object; otherwise, false.</returns>
+		/// <returns>Returns <see langword="true"/> if the object is equivalent to the specified object; Otherwise, <see langword="false"/>.</returns>
 		public override bool Equals(object obj)
 		{
 			if (obj == null)
@@ -180,7 +180,7 @@ namespace ACAD_Utilities
 		/// </summary>
 		/// <param name="class1">The first <see cref="Attrib"/> object to compare.</param>
 		/// <param name="class2">The second <see cref="Attrib"/> object to compare.</param>
-		/// <returns><c>true</c> if the two objects are equivalent; Otherwise, <c>false</c>.</returns>
+		/// <returns><see langword="true"/> if the two objects are equivalent; Otherwise, <see langword="false"/>.</returns>
 		public static bool operator ==(Attrib class1, Attrib class2)
 		{
 			if (class1 is null && class2 is null)
@@ -197,7 +197,7 @@ namespace ACAD_Utilities
 		/// </summary>
 		/// <param name="class1">The <see cref="Attrib"/> object to compare.</param>
 		/// <param name="class2">The <see cref="string"/> object to compare.</param>
-		/// <returns><c>true</c> if the two objects are equivalent, Otherwise, <c>false</c>.</returns>
+		/// <returns><see langword="true"/> if the two objects are equivalent, Otherwise, <see langword="false"/>.</returns>
 		public static bool operator ==(Attrib class1, string class2)
 		{
 			if (class1 is null && class2 is null)
@@ -214,7 +214,7 @@ namespace ACAD_Utilities
 		/// </summary>
 		/// <param name="class1">The <see cref="string"/> object to compare.</param>
 		/// <param name="class2">The <see cref="Attrib"/> object to compare.</param>
-		/// <returns><c>true</c> if the two objects are equivalent; Otherwise, <c>false</c>.</returns>
+		/// <returns><see langword="true"/> if the two objects are equivalent; Otherwise, <see langword="false"/>.</returns>
 		public static bool operator ==(string class1, Attrib class2)
 		{
 			if (class1 is null && class2 is null)
@@ -231,7 +231,7 @@ namespace ACAD_Utilities
 		/// </summary>
 		/// <param name="class1">The first <see cref="Attrib"/> object to compare.</param>
 		/// <param name="class2">The second <see cref="Attrib"/> object to compare.</param>
-		/// <returns><c>true</c> if the two objects are not equivalent; Otherwise, <c>false</c>.</returns>
+		/// <returns><see langword="true"/> if the two objects are not equivalent; Otherwise, <see langword="false"/>.</returns>
 		public static bool operator !=(Attrib class1, Attrib class2)
 		{
 			return !(class1 == class2);
@@ -243,7 +243,7 @@ namespace ACAD_Utilities
 		/// </summary>
 		/// <param name="class1">The <see cref="Attrib"/> object to compare.</param>
 		/// <param name="class2">The <see cref="string"/> object to compare.</param>
-		/// <returns><c>true</c> if the two objects are not equivalent, Otherwise, <c>false</c>.</returns>
+		/// <returns><see langword="true"/> if the two objects are not equivalent, Otherwise, <see langword="false"/>.</returns>
 		public static bool operator !=(Attrib class1, string class2)
 		{
 			return !(class1 == class2);
@@ -255,7 +255,7 @@ namespace ACAD_Utilities
 		/// </summary>
 		/// <param name="class1">The <see cref="string"/> object to compare.</param>
 		/// <param name="class2">The <see cref="Attrib"/> object to compare.</param>
-		/// <returns><c>true</c> if the two objects are not equivalent; Otherwise, false.</returns>
+		/// <returns><see langword="true"/> if the two objects are not equivalent; Otherwise, <see langword="false"/>.</returns>
 		public static bool operator !=(string class1, Attrib class2)
 		{
 			return !(class1 == class2);

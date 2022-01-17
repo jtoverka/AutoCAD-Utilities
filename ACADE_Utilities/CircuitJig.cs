@@ -90,7 +90,7 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Update the circuit view.
 		/// </summary>
-		/// <returns><c>true</c> if the update is successful; otherwise, false.</returns>
+		/// <returns><see langword="true"/> if the update is successful; Otherwise, <see langword="false"/>.</returns>
 		protected override bool Update()
 		{
 			if (circuit?.BlockReference == null)

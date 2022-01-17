@@ -510,7 +510,7 @@ namespace ACAD_Utilities
 		/// contains the specified key.
 		/// </summary>
 		/// <param name="class"></param>
-		/// <returns><c>true</c> if the Dictionary contains an element with the specified key; otherwise, <c>false</c>.</returns>
+		/// <returns><see langword="true"/> if the Dictionary contains an element with the specified key; Otherwise, <see langword="false"/>.</returns>
 		/// <exception cref="System.ArgumentNullException"/>
 		public bool ContainsKey(RXClass @class) => entitiesField.ContainsKey(@class);
 

@@ -165,7 +165,7 @@ namespace ACAD_Utilities
         /// <param name="point">The point to check.</param>
         /// <param name="line">The two points that determines a line to check.</param>
         /// <param name="tolerance">The allowable distance between the point and the nearest point on the line.</param>
-        /// <returns><c>true</c> if the point in on or near the line within a specified tolerance; otherwise <c>false</c>.</returns>
+        /// <returns><see langword="true"/> if the point in on or near the line within a specified tolerance; Otherwise <see langword="false"/>.</returns>
         public static bool LineMember(Point3d point, Tuple<Point3d, Point3d> line, double tolerance)
         {
             return LineMember(point, line.Item1, line.Item2, tolerance);
@@ -178,7 +178,7 @@ namespace ACAD_Utilities
         /// <param name="startPoint">The start point of the line.</param>
         /// <param name="endPoint">The end point of the line.</param>
         /// <param name="tolerance">The allowable distance between the point and the nearest point on the line.</param>
-        /// <returns><c>true</c> if the point in on or near the line within a specified tolerance; otherwise <c>false</c>.</returns>
+        /// <returns><see langword="true"/> if the point in on or near the line within a specified tolerance; Otherwise <see langword="false"/>.</returns>
         public static bool LineMember(Point3d point, Point3d startPoint, Point3d endPoint, double tolerance)
         {
             double x0 = point.X;
@@ -225,7 +225,7 @@ namespace ACAD_Utilities
         /// <param name="point">The point to check.</param>
         /// <param name="line">The line to check.</param>
         /// <param name="tolerance">The allowable distance between the point and the nearest point on the line.</param>
-        /// <returns><c>true</c> if the point in on or near the line within a specified tolerance; otherwise <c>false</c>.</returns>
+        /// <returns><see langword="true"/> if the point in on or near the line within a specified tolerance; Otherwise <see langword="false"/>.</returns>
         public static bool LineMember(Point3d point, Line line, double tolerance)
         {
             return LineMember(point, new Tuple<Point3d, Point3d>(line.StartPoint, line.EndPoint), tolerance);
