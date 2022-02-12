@@ -46,6 +46,7 @@ namespace ACADE_Utilities
 		private Point3d wdmlrPointField = Point3d.Origin;
 		private double rungDist = 1;
 		private int rungCount = 0;
+		private int rungIncrement = 1;
 		private double ladderWidth = 0;
 		private bool horizontal = true;
 		private string wireNumberFirst;
@@ -203,6 +204,7 @@ namespace ACADE_Utilities
 			Double.TryParse(ladderWidthString, out ladderWidth);
 			Double.TryParse(rungDistString, out rungDist);
 			int.TryParse(rungCountString, out rungCount);
+			int.TryParse(incrementString, out rungIncrement);
 			horizontal = !rungOrientation.Equals("V", StringComparison.OrdinalIgnoreCase);
 			wireNumberFirst = rungFirstNumString;
 		}
@@ -302,7 +304,7 @@ namespace ACADE_Utilities
 			char[] characters = wireNumberFirst.Reverse().ToArray();
 
 			// Get addition, split and reverse
-			int[] addition = NumericDigits(index).Reverse().ToArray();
+			int[] addition = NumericDigits(index * rungIncrement).Reverse().ToArray();
 
 			// Overflow in case numbers add up and overflow
 			int overflow = 0;
@@ -316,9 +318,29 @@ namespace ACADE_Utilities
 				char character = characters[i];
 
 				if (i == addition.Length)
+				{
+					if (character.Equals('.') && overflow != 0)
+					{
+						List<char> list = characters.ToList();
+						list.Insert(i, '0');
+						characters = list.ToArray();
+						character = characters[i];
+					}
+
 					add = 0;
+				}
 				else
+				{
+					if (character.Equals('.'))
+					{
+						List<char> list = characters.ToList();
+						list.Insert(i, '0');
+						characters = list.ToArray();
+						character = characters[i];
+					}
+
 					add = addition[i];
+				}
 
 				if (Number(character))
 				{
@@ -343,9 +365,9 @@ namespace ACADE_Utilities
 
 				int[] added;
 				if (numeric)
-					added = NumericDigits(add);
+					added = NumericDigits(add).Reverse().ToArray();
 				else
-					added = AlphaDigits(add);
+					added = AlphaDigits(add).Reverse().ToArray();
 
 				// Update character
 				character = (char)(offset + added[0]);
@@ -353,6 +375,8 @@ namespace ACADE_Utilities
 				// Get overflow if it exists
 				if (added.Length != 1)
 					overflow = added[1];
+				else
+					overflow = 0;
 
 				// Update character
 				characters[i] = character;
