@@ -32,6 +32,7 @@ using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -80,6 +81,9 @@ namespace ACADE_Utilities
 		// ObjectId of DBText, value of old Text
 		private readonly Dictionary<ObjectId, string> dBText = new();
 
+		// ObjectId of Dimensions, value of old text
+		private readonly Dictionary<ObjectId, string> dimText = new();
+
 		// ObjectId of Block, AttributesWithId Dictionary
 		private readonly Dictionary<ObjectId, Dictionary<string, Tuple<Attrib, ObjectId?>>> blockAttributes = new();
 
@@ -112,6 +116,54 @@ namespace ACADE_Utilities
 		/// Gets or sets the replacement keys for an AutoCAD Electrical block reference with a specific Tag key.
 		/// </summary>
 		public Dictionary<string, Dictionary<string, Attrib>> BlockKeys { get; set; } = null;
+
+		/// <summary>
+		/// Gets or sets the flag to find and replace table cells.
+		/// </summary>
+		[DefaultValue(true)]
+		public bool FindAndReplaceTable { get; set; } = true;
+
+		/// <summary>
+		/// Gets or sets the flag to find and replace MText.
+		/// </summary>
+		[DefaultValue(true)]
+		public bool FindAndReplaceMText { get; set; } = true;
+
+		/// <summary>
+		/// Gets or sets the flag to find and replace text.
+		/// </summary>
+		[DefaultValue(true)]
+		public bool FindAndReplaceText { get; set; } = true;
+
+		/// <summary>
+		/// Gets or sets the flag to find and replace attributes.
+		/// </summary>
+		[DefaultValue(true)]
+		public bool FindAndReplaceAttributes { get; set; } = true;
+
+		/// <summary>
+		/// Gets or sets the flag to find and replace Dimension text.
+		/// </summary>
+		[DefaultValue(true)]
+		public bool FindAndReplaceDimensionText { get; set; } = true;
+
+		/// <summary>
+		/// Gets or sets the flag to find and replace Xref blocks.
+		/// </summary>
+		[DefaultValue(true)]
+		public bool FindAndReplaceXrefBlocks { get; set; } = true;
+
+		/// <summary>
+		/// Gets or sets the flag to find and replace within block definitions.
+		/// </summary>
+		[DefaultValue(true)]
+		public bool FindAndReplaceWithinBlocks { get; set; } = true;
+
+		/// <summary>
+		/// Gets or sets the flag to find and replace dynamic block properties.
+		/// </summary>
+		[DefaultValue(true)]
+		public bool FindAndReplaceDynamicProperties { get; set; } = true;
 
 		#endregion
 
@@ -191,6 +243,18 @@ namespace ACADE_Utilities
 				{
 					using DBText text = transaction.GetObject(objectId, OpenMode.ForRead) as DBText;
 					dBText.Add(objectId, text.TextString);
+				}
+				else if (objectId.ObjectClass == Sort.rxAlignedDimension
+					  || objectId.ObjectClass == Sort.rxArcDimension
+					  || objectId.ObjectClass == Sort.rxDiametricDimension
+					  || objectId.ObjectClass == Sort.rxLineAngularDimension2
+					  || objectId.ObjectClass == Sort.rxPoint3AngularDimension
+					  || objectId.ObjectClass == Sort.rxRadialDimension
+					  || objectId.ObjectClass == Sort.rxRadialDimensionLarge
+					  || objectId.ObjectClass == Sort.rxRotatedDimension)
+				{
+					using Dimension dimension = transaction.GetObject(objectId, OpenMode.ForRead) as Dimension;
+					dimText.Add(objectId, dimension.DimensionText);
 				}
 				else if (objectId.ObjectClass == Sort.rxMText)
 				{
@@ -413,167 +477,241 @@ namespace ACADE_Utilities
 			if (AttributeKeys == null || BlockKeys == null)
 				return;
 
-			foreach (var item in tables)
+			if (FindAndReplaceTable)
 			{
-				using Table table = transaction.GetObject(item.Item1, OpenMode.ForWrite) as Table;
-
-				foreach (var tuple in item.Item2)
+				foreach (var item in tables)
 				{
-					Cell cell = table.Cells[tuple.Item1,tuple.Item2];
+					using Table table = transaction.GetObject(item.Item1, OpenMode.ForWrite) as Table;
 
-					//If the cell is locked, unlock it.
-					if (cell.IsContentEditable.Value == false)
-						cell.State = CellStates.ContentModifiedAfterUpdate;
-
-					cell.Value = FindAndReplace(tuple.Item3, AttributeKeys);
-				}
-			}
-
-			foreach (KeyValuePair<ObjectId, string> item in mText)
-			{
-				using MText mtext = transaction.GetObject(item.Key, OpenMode.ForRead) as MText;
-				string value = FindAndReplace(item.Value, AttributeKeys);
-
-				if (value == mtext.Contents)
-					continue;
-
-				mtext.UpgradeOpen();
-				mtext.Contents = value;
-			}
-
-			foreach (KeyValuePair<ObjectId,string> item in dBText)
-			{
-				using DBText text = transaction.GetObject(item.Key, OpenMode.ForRead) as DBText;
-				string value = FindAndReplace(item.Value, AttributeKeys);
-
-				if (value == text.TextString)
-					continue;
-
-				text.UpgradeOpen();
-				text.TextString = value;
-				AlignText(text);
-			}
-
-			foreach (var item in blockAttributes)
-			{
-				using BlockReference blockReference = transaction.GetObject(item.Key, OpenMode.ForRead) as BlockReference;
-
-				Dictionary<string, Tuple<Attrib, ObjectId?>> attributes = item.Value;
-				Dictionary<string, Attrib> write = new();
-
-				foreach (var attribute in attributes)
-				{
-					write[attribute.Key] = attribute.Value.Item1;
-				}
-
-				string[] tags = write.Keys.ToArray();
-
-				foreach (string tag in tags)
-				{
-					string value = write[tag].Text;
-
-					value = FindAndReplace(value, AttributeKeys);
-
-					write[tag].Text = value;
-				}
-
-				foreach (string tag in tags)
-				{
-					if (!(blockTag.IsMatch(tag) || sigCode.IsMatch(tag)))
-						continue;
-
-					string value = write[tag].Text;
-
-					if (!BlockKeys.ContainsKey(value))
-						continue;
-
-					foreach (var kvp in BlockKeys[value])
+					foreach (var tuple in item.Item2)
 					{
-						write[kvp.Key] = kvp.Value;
+						Cell cell = table.Cells[tuple.Item1, tuple.Item2];
+
+						//If the cell is locked, unlock it.
+						if (cell.IsContentEditable.Value == false)
+							cell.State = CellStates.ContentModifiedAfterUpdate;
+
+						cell.Value = FindAndReplace(tuple.Item3, AttributeKeys);
+					}
+				}
+			}
+
+			if (FindAndReplaceMText)
+			{
+				foreach (KeyValuePair<ObjectId, string> item in mText)
+				{
+					using MText mtext = transaction.GetObject(item.Key, OpenMode.ForRead) as MText;
+					string value = FindAndReplace(item.Value, AttributeKeys);
+
+					if (value == mtext.Contents)
+						continue;
+
+					mtext.UpgradeOpen();
+					mtext.Contents = value;
+				}
+			}
+
+			if (FindAndReplaceText)
+			{
+				foreach (KeyValuePair<ObjectId, string> item in dBText)
+				{
+					using DBText text = transaction.GetObject(item.Key, OpenMode.ForRead) as DBText;
+					string value = FindAndReplace(item.Value, AttributeKeys);
+
+					if (value == text.TextString)
+						continue;
+
+					text.UpgradeOpen();
+					text.TextString = value;
+					AlignText(text);
+				}
+			}
+
+			if (FindAndReplaceDimensionText)
+			{
+				foreach (KeyValuePair<ObjectId, string> item in dimText)
+				{
+					using Dimension dimension = transaction.GetObject(item.Key, OpenMode.ForRead) as Dimension;
+					string value = FindAndReplace(item.Value, AttributeKeys);
+
+					if (value == dimension.DimensionText)
+						continue;
+
+					dimension.UpgradeOpen();
+					dimension.DimensionText = value;
+				}
+			}
+
+			if (FindAndReplaceAttributes)
+			{
+				foreach (var item in blockAttributes)
+				{
+					using BlockReference blockReference = transaction.GetObject(item.Key, OpenMode.ForRead) as BlockReference;
+
+					Dictionary<string, Tuple<Attrib, ObjectId?>> attributes = item.Value;
+					Dictionary<string, Attrib> write = new();
+
+					foreach (var attribute in attributes)
+					{
+						write[attribute.Key] = attribute.Value.Item1;
 					}
 
-					if (BlockKeys[value].ContainsKey("BASETAG"))
-						write[tag] = BlockKeys[value]["BASETAG"];
-				}
+					string[] tags = write.Keys.ToArray();
 
-				blockReference.SetAttributes(write);
-			}
-
-			// Find and replace withiin blocks if BLOCKREPLACE attribute key is found
-			if (AttributeKeys.ContainsKey("$BLOCKREPLACE$") && AttributeKeys["$BLOCKREPLACE$"].Equals("true", StringComparison.OrdinalIgnoreCase))
-			{
-				foreach (ObjectId blockId in blocks)
-				{
-					if (!blockId.Validate(false))
-						continue;
-
-					AeCircuit circuit = new(blockId);
-
-					// Remove blocks already processed.
-					foreach (ObjectId objectId in blocks)
+					foreach (string tag in tags)
 					{
-						if (circuit.blocks.Contains(objectId))
-							circuit.blocks.Remove(objectId);
+						string value = write[tag].Text;
+
+						value = FindAndReplace(value, AttributeKeys);
+
+						write[tag].Text = value;
 					}
 
-					circuit.AttributeKeys = AttributeKeys;
-					circuit.BlockKeys = BlockKeys;
-					circuit.UpdateCircuitKeys();
-				}
-			}
-
-			if (AttributeKeys.ContainsKey("$XREF$"))
-			{
-				string filepath = AttributeKeys["$XREF$"];
-
-				AttributeKeys.TryGetValue("$ROTATE$", out string rotation);
-				rotation ??= "0";
-				
-				double rotate = 0;
-				if (rotation.Equals("90"))
-					rotate = 1.57079633;
-				else if (rotation.Equals("180"))
-					rotate = 3.14159265;
-				else if (rotation.Equals("270"))
-					rotate = 4.71238898;
-
-				if (Path.GetExtension(filepath).Equals(string.Empty))
-					filepath = filepath + ".dwg";
-
-				string name = "XREF-" + Path.GetFileNameWithoutExtension(filepath);
-				
-				blockId.Database.XrefEditEnabled = true;
-
-				using BlockTable blockTable = transaction.GetObject(blockId.Database.BlockTableId, OpenMode.ForRead) as BlockTable;
-
-				foreach (ObjectId objectId in blockReferences)
-				{
-					using BlockReference blockReference = transaction.GetObject(objectId, OpenMode.ForRead) as BlockReference;
-					using BlockTableRecord record = transaction.GetObject(blockReference.BlockTableRecord, OpenMode.ForRead) as BlockTableRecord;
-
-					if (record.IsFromExternalReference)
+					foreach (string tag in tags)
 					{
-						blockReference.UpgradeOpen();
-						blockReference.Rotation = rotate;
+						if (!(blockTag.IsMatch(tag) || sigCode.IsMatch(tag)))
+							continue;
 
-						if (!blockTable.Has(name))
+						string value = write[tag].Text;
+
+						if (!BlockKeys.ContainsKey(value))
+							continue;
+
+						foreach (var kvp in BlockKeys[value])
 						{
-							record.UpgradeOpen();
-							record.PathName = filepath;
-							record.Name = name;
+							write[kvp.Key] = kvp.Value;
 						}
-						else
-						{
-							using BlockTableRecord existing = transaction.GetObject(blockTable[name], OpenMode.ForRead) as BlockTableRecord;
-							if (existing.IsFromExternalReference)
-							{
-								using BlockReference reference = new(blockReference.Position, blockTable[name]);
-								reference.Rotation = rotate;
-								blockReference.Erase();
 
-								using BlockTableRecord block = transaction.GetObject(blockId, OpenMode.ForWrite) as BlockTableRecord;
-								block.AppendEntity(reference);
-								transaction.AddNewlyCreatedDBObject(reference, true);
+						if (BlockKeys[value].ContainsKey("BASETAG"))
+							write[tag] = BlockKeys[value]["BASETAG"];
+					}
+
+					blockReference.SetAttributes(write);
+				}
+			}
+
+			if (FindAndReplaceWithinBlocks)
+			{
+				// Find and replace withiin blocks if BLOCKREPLACE attribute key is found
+				if (AttributeKeys.ContainsKey("$BLOCKREPLACE$") && AttributeKeys["$BLOCKREPLACE$"].Equals("true", StringComparison.OrdinalIgnoreCase))
+				{
+					foreach (ObjectId blockId in blocks)
+					{
+						if (!blockId.Validate(false))
+							continue;
+
+						AeCircuit circuit = new(blockId);
+
+						// Remove blocks already processed.
+						foreach (ObjectId objectId in blocks)
+						{
+							if (circuit.blocks.Contains(objectId))
+								circuit.blocks.Remove(objectId);
+						}
+
+						circuit.AttributeKeys = AttributeKeys;
+						circuit.BlockKeys = BlockKeys;
+						circuit.UpdateCircuitKeys();
+					}
+				}
+			}
+
+			if (FindAndReplaceXrefBlocks)
+			{
+				if (AttributeKeys.ContainsKey("$XREF$"))
+				{
+					string filepath = AttributeKeys["$XREF$"];
+
+					AttributeKeys.TryGetValue("$ROTATE$", out string rotation);
+					rotation ??= "0";
+
+					double rotate = 0;
+					if (rotation.Equals("90"))
+						rotate = 1.57079633;
+					else if (rotation.Equals("180"))
+						rotate = 3.14159265;
+					else if (rotation.Equals("270"))
+						rotate = 4.71238898;
+
+					if (Path.GetExtension(filepath).Equals(string.Empty))
+						filepath = filepath + ".dwg";
+
+					string name = "XREF-" + Path.GetFileNameWithoutExtension(filepath);
+
+					blockId.Database.XrefEditEnabled = true;
+
+					using BlockTable blockTable = transaction.GetObject(blockId.Database.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+					foreach (ObjectId objectId in blockReferences)
+					{
+						using BlockReference blockReference = transaction.GetObject(objectId, OpenMode.ForRead) as BlockReference;
+						using BlockTableRecord record = transaction.GetObject(blockReference.BlockTableRecord, OpenMode.ForRead) as BlockTableRecord;
+
+						if (record.IsFromExternalReference)
+						{
+							blockReference.UpgradeOpen();
+							blockReference.Rotation = rotate;
+
+							if (!blockTable.Has(name))
+							{
+								record.UpgradeOpen();
+								record.PathName = filepath;
+								record.Name = name;
+							}
+							else
+							{
+								using BlockTableRecord existing = transaction.GetObject(blockTable[name], OpenMode.ForRead) as BlockTableRecord;
+								if (existing.IsFromExternalReference)
+								{
+									using BlockReference reference = new(blockReference.Position, blockTable[name]);
+									reference.Rotation = rotate;
+									blockReference.Erase();
+
+									using BlockTableRecord block = transaction.GetObject(blockId, OpenMode.ForWrite) as BlockTableRecord;
+									block.AppendEntity(reference);
+									transaction.AddNewlyCreatedDBObject(reference, true);
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if (FindAndReplaceDynamicProperties)
+			{
+				if (AttributeKeys.ContainsKey("$DYNAMIC$"))
+				{
+					using BlockTable blockTable = transaction.GetObject(blockId.Database.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+					foreach (ObjectId objectId in blockReferences)
+					{
+						using BlockReference blockReference = transaction.GetObject(objectId, OpenMode.ForRead) as BlockReference;
+
+						if (blockReference.IsDynamicBlock)
+						{
+							blockReference.UpgradeOpen();
+
+							using DynamicBlockReferencePropertyCollection properties = blockReference.DynamicBlockReferencePropertyCollection;
+							for (int i = 0; i < properties.Count; i++)
+							{
+								DynamicBlockReferenceProperty property = properties[i];
+
+								try
+								{
+									if (!property.ReadOnly && AttributeKeys.ContainsKey(property.PropertyName))
+									{
+										DynamicBlockReferencePropertyUnitsType type = property.UnitsType;
+										if (type == DynamicBlockReferencePropertyUnitsType.NoUnits)
+										{
+											property.Value = AttributeKeys[property.PropertyName];
+										}
+										else
+										{
+											property.Value = double.Parse(AttributeKeys[property.PropertyName]);
+										}
+									}
+								}
+								catch (System.Exception ex) { }
 							}
 						}
 					}
