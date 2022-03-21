@@ -9,8 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ACADE_Utilities", "ACADE_Ut
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{73E43FEE-325A-4561-AF21-93359BEAF4C4}"
 	ProjectSection(SolutionItems) = preProject
-		..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2019\accoremgd.dll = ..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2019\accoremgd.dll
-		..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2019\acdbmgd.dll = ..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2019\acdbmgd.dll
+		accoremgd.dll = accoremgd.dll
+		accoremgd.xml = accoremgd.xml
+		acdbmgd.dll = acdbmgd.dll
+		acdbmgd.xml = acdbmgd.xml
 		Autodesk.AutoCAD.Interop.Common.dll = Autodesk.AutoCAD.Interop.Common.dll
 		Autodesk.AutoCAD.Interop.dll = Autodesk.AutoCAD.Interop.dll
 	EndProjectSection

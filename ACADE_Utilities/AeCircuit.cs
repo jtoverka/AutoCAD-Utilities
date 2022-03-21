@@ -100,7 +100,7 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Gets or sets the deviation factor acceptable for a circuit drawing.
 		/// </summary>
-		public static double Tolerance { get; set; } = 0.025;
+		public double Tolerance { get; set; } = 0.025;
 
 		/// <summary>
 		/// Gets or sets the AutoCAD Electrical circuit block reference.
@@ -179,13 +179,40 @@ namespace ACADE_Utilities
 			blockId.Validate(RXObject.GetClass(typeof(BlockTableRecord)), true);
 			this.blockId = blockId;
 
-			Database database = blockId.Database;
+			BlockReference = new BlockReference(Point3d.Origin, blockId);
+
+			UpdateCircuitSort(this);
+		}
+
+		#endregion
+
+		#region Methods
+
+		/// <summary>
+		/// Sorts the entities in the block.
+		/// </summary>
+		/// <param name="circuit">The circuit with the block to sort.</param>
+		private void UpdateCircuitSort(AeCircuit circuit)
+		{
+			Database database = circuit.blockId.Database;
 
 			bool started = database.GetOrStartTransaction(out Transaction transaction);
 			using Disposable disposable = new(transaction, started);
 
-			using BlockTableRecord block = transaction.GetObject(blockId, OpenMode.ForRead) as BlockTableRecord;
-			BlockReference = new BlockReference(Point3d.Origin, blockId);
+			using BlockTableRecord block = transaction.GetObject(circuit.blockId, OpenMode.ForRead) as BlockTableRecord;
+
+			circuit.wires.Clear();
+			circuit.blocks.Clear();
+			circuit.blockAttributes.Clear();
+			circuit.blockReferences.Clear();
+			circuit.linkTermCollection.Clear();
+			circuit.wireNoAttributes.Clear();
+			circuit.terminalAttributes.Clear();
+			circuit.dBText.Clear();
+			circuit.dimText.Clear();
+			circuit.mText.Clear();
+			circuit.tables.Clear();
+			circuit.circuitNetwork.Clear();
 
 			//Sort the circuit data
 			foreach (ObjectId objectId in block)
@@ -211,38 +238,38 @@ namespace ACADE_Utilities
 					if (!(attributeIds.ContainsKey("WIRENO") && attributeIds["WIRENO"].Item2.HasValue))
 						continue;
 
-					wires.Add(objectId, attributeIds["WIRENO"].Item2.Value);
+					circuit.wires.Add(objectId, attributeIds["WIRENO"].Item2.Value);
 				}
 				else if (objectId.ObjectClass == Sort.rxBlockReference)
 				{
 					using BlockReference blockReference = transaction.GetObject(objectId, OpenMode.ForRead) as BlockReference;
 
 					// Add sub blocks for later use.
-					if (!blocks.Contains(blockReference.BlockTableRecord))
-						blocks.Add(blockReference.BlockTableRecord);
+					if (!circuit.blocks.Contains(blockReference.BlockTableRecord))
+						circuit.blocks.Add(blockReference.BlockTableRecord);
 
 					Dictionary<string, Tuple<Attrib, ObjectId?>> attributeIds = blockReference.GetAttributesWithIds();
 
-					blockAttributes.Add(objectId, attributeIds);
-					blockReferences.Add(objectId);
+					circuit.blockAttributes.Add(objectId, attributeIds);
+					circuit.blockReferences.Add(objectId);
 
 					if (attributeIds.ContainsKey("LINKTERM"))
-						linkTermCollection.Add(objectId);
+						circuit.linkTermCollection.Add(objectId);
 
 					if (wireNo.IsMatch(blockReference.Name) && attributeIds.ContainsKey("WIRENO") && attributeIds["WIRENO"].Item2.HasValue)
-						wireNoAttributes.Add(attributeIds["WIRENO"].Item2.Value, attributeIds["WIRENO"].Item1.Text);
+						circuit.wireNoAttributes.Add(attributeIds["WIRENO"].Item2.Value, attributeIds["WIRENO"].Item1.Text);
 
 					foreach (var item in attributeIds)
 					{
 						string attributeTag = item.Key;
 						if ((terminal.IsMatch(attributeTag) || attributeTag.Equals("WIRENO")) && item.Value.Item2.HasValue)
-							terminalAttributes.Add(item.Value.Item2.Value);
+							circuit.terminalAttributes.Add(item.Value.Item2.Value);
 					}
 				}
 				else if (objectId.ObjectClass == Sort.rxDBText)
 				{
 					using DBText text = transaction.GetObject(objectId, OpenMode.ForRead) as DBText;
-					dBText.Add(objectId, text.TextString);
+					circuit.dBText.Add(objectId, text.TextString);
 				}
 				else if (objectId.ObjectClass == Sort.rxAlignedDimension
 					  || objectId.ObjectClass == Sort.rxArcDimension
@@ -254,14 +281,14 @@ namespace ACADE_Utilities
 					  || objectId.ObjectClass == Sort.rxRotatedDimension)
 				{
 					using Dimension dimension = transaction.GetObject(objectId, OpenMode.ForRead) as Dimension;
-					dimText.Add(objectId, dimension.DimensionText);
+					circuit.dimText.Add(objectId, dimension.DimensionText);
 				}
 				else if (objectId.ObjectClass == Sort.rxMText)
 				{
 					using MText text = transaction.GetObject(objectId, OpenMode.ForRead) as MText;
-					mText.Add(objectId, text.Contents);
+					circuit.mText.Add(objectId, text.Contents);
 				}
-				else if(objectId.ObjectClass == Sort.rxTable)
+				else if (objectId.ObjectClass == Sort.rxTable)
 				{
 					using Table table = transaction.GetObject(objectId, OpenMode.ForRead) as Table;
 					List<Tuple<int, int, string>> cells = new();
@@ -271,7 +298,7 @@ namespace ACADE_Utilities
 						for (int j = 0; j < table.Columns.Count; j++)
 						{
 							Cell cell = table.Cells[i, j];
-							
+
 							//Catch exception from merged cells
 							try
 							{
@@ -282,29 +309,25 @@ namespace ACADE_Utilities
 						}
 					}
 
-					tables.Add(new(objectId, cells));
+					circuit.tables.Add(new(objectId, cells));
 				}
 			}
 
 			// Go through the terminal attributes
 			// Try and find connections to wireno blocks
-			foreach (ObjectId id in terminalAttributes)
+			foreach (ObjectId id in circuit.terminalAttributes)
 			{
 				ObjectId WireNoId = FindWireNoAttribute(id);
 
 				if (WireNoId.IsNull)
 					continue;
 
-				if (!circuitNetwork.ContainsKey(WireNoId))
-					circuitNetwork[WireNoId] = new ObjectIdCollection();
+				if (!circuit.circuitNetwork.ContainsKey(WireNoId))
+					circuit.circuitNetwork[WireNoId] = new ObjectIdCollection();
 
-				circuitNetwork[WireNoId].Add(id);
+				circuit.circuitNetwork[WireNoId].Add(id);
 			}
 		}
-
-		#endregion
-
-		#region Methods
 
 		/// <summary>
 		/// Prompt the user to insert the circuit.
@@ -468,6 +491,10 @@ namespace ACADE_Utilities
 		/// <summary>
 		/// Update the circuit values.
 		/// </summary>
+		/// <remarks>
+		/// $XREF$ - Filepath to xref
+		/// $ROTATE$ - Rotation of xref
+		/// </remarks>
 		public void UpdateCircuitKeys()
 		{
 			bool started = blockId.Database.GetOrStartTransaction(out Transaction transaction);
@@ -592,85 +619,78 @@ namespace ACADE_Utilities
 
 			if (FindAndReplaceWithinBlocks)
 			{
-				// Find and replace withiin blocks if BLOCKREPLACE attribute key is found
-				if (AttributeKeys.ContainsKey("$BLOCKREPLACE$") && AttributeKeys["$BLOCKREPLACE$"].Equals("true", StringComparison.OrdinalIgnoreCase))
+				foreach (ObjectId blockId in blocks)
 				{
-					foreach (ObjectId blockId in blocks)
+					if (!blockId.Validate(false))
+						continue;
+
+					AeCircuit circuit = new(blockId);
+
+					// Remove blocks already processed.
+					foreach (ObjectId objectId in blocks)
 					{
-						if (!blockId.Validate(false))
-							continue;
-
-						AeCircuit circuit = new(blockId);
-
-						// Remove blocks already processed.
-						foreach (ObjectId objectId in blocks)
-						{
-							if (circuit.blocks.Contains(objectId))
-								circuit.blocks.Remove(objectId);
-						}
-
-						circuit.AttributeKeys = AttributeKeys;
-						circuit.BlockKeys = BlockKeys;
-						circuit.UpdateCircuitKeys();
+						if (circuit.blocks.Contains(objectId))
+							circuit.blocks.Remove(objectId);
 					}
+
+					circuit.AttributeKeys = AttributeKeys;
+					circuit.BlockKeys = BlockKeys;
+					circuit.UpdateCircuitKeys();
 				}
 			}
 
 			if (FindAndReplaceXrefBlocks)
 			{
-				if (AttributeKeys.ContainsKey("$XREF$"))
+				AttributeKeys.TryGetValue("$XREF$", out string filepath);
+				AttributeKeys.TryGetValue("$ROTATE$", out string rotation);
+				rotation ??= "0";
+				filepath ??= "";
+
+				double rotate = 0;
+				if (rotation.Equals("90"))
+					rotate = 1.57079633;
+				else if (rotation.Equals("180"))
+					rotate = 3.14159265;
+				else if (rotation.Equals("270"))
+					rotate = 4.71238898;
+
+				if (Path.GetExtension(filepath).Equals(string.Empty))
+					filepath += ".dwg";
+
+				string name = "XREF-" + Path.GetFileNameWithoutExtension(filepath);
+
+				blockId.Database.XrefEditEnabled = true;
+
+				using BlockTable blockTable = transaction.GetObject(blockId.Database.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+				foreach (ObjectId objectId in blockReferences)
 				{
-					string filepath = AttributeKeys["$XREF$"];
+					using BlockReference blockReference = transaction.GetObject(objectId, OpenMode.ForRead) as BlockReference;
+					using BlockTableRecord record = transaction.GetObject(blockReference.BlockTableRecord, OpenMode.ForRead) as BlockTableRecord;
 
-					AttributeKeys.TryGetValue("$ROTATE$", out string rotation);
-					rotation ??= "0";
-
-					double rotate = 0;
-					if (rotation.Equals("90"))
-						rotate = 1.57079633;
-					else if (rotation.Equals("180"))
-						rotate = 3.14159265;
-					else if (rotation.Equals("270"))
-						rotate = 4.71238898;
-
-					if (Path.GetExtension(filepath).Equals(string.Empty))
-						filepath = filepath + ".dwg";
-
-					string name = "XREF-" + Path.GetFileNameWithoutExtension(filepath);
-
-					blockId.Database.XrefEditEnabled = true;
-
-					using BlockTable blockTable = transaction.GetObject(blockId.Database.BlockTableId, OpenMode.ForRead) as BlockTable;
-
-					foreach (ObjectId objectId in blockReferences)
+					if (record.IsFromExternalReference)
 					{
-						using BlockReference blockReference = transaction.GetObject(objectId, OpenMode.ForRead) as BlockReference;
-						using BlockTableRecord record = transaction.GetObject(blockReference.BlockTableRecord, OpenMode.ForRead) as BlockTableRecord;
+						blockReference.UpgradeOpen();
+						blockReference.Rotation = rotate;
 
-						if (record.IsFromExternalReference)
+						if (!blockTable.Has(name))
 						{
-							blockReference.UpgradeOpen();
-							blockReference.Rotation = rotate;
-
-							if (!blockTable.Has(name))
+							record.UpgradeOpen();
+							record.PathName = filepath;
+							record.Name = name;
+						}
+						else
+						{
+							using BlockTableRecord existing = transaction.GetObject(blockTable[name], OpenMode.ForRead) as BlockTableRecord;
+							if (existing.IsFromExternalReference)
 							{
-								record.UpgradeOpen();
-								record.PathName = filepath;
-								record.Name = name;
-							}
-							else
-							{
-								using BlockTableRecord existing = transaction.GetObject(blockTable[name], OpenMode.ForRead) as BlockTableRecord;
-								if (existing.IsFromExternalReference)
-								{
-									using BlockReference reference = new(blockReference.Position, blockTable[name]);
-									reference.Rotation = rotate;
-									blockReference.Erase();
+								using BlockReference reference = new(blockReference.Position, blockTable[name]);
+								reference.Rotation = rotate;
+								blockReference.Erase();
 
-									using BlockTableRecord block = transaction.GetObject(blockId, OpenMode.ForWrite) as BlockTableRecord;
-									block.AppendEntity(reference);
-									transaction.AddNewlyCreatedDBObject(reference, true);
-								}
+								using BlockTableRecord block = transaction.GetObject(blockId, OpenMode.ForWrite) as BlockTableRecord;
+								block.AppendEntity(reference);
+								transaction.AddNewlyCreatedDBObject(reference, true);
 							}
 						}
 					}
@@ -679,40 +699,37 @@ namespace ACADE_Utilities
 
 			if (FindAndReplaceDynamicProperties)
 			{
-				if (AttributeKeys.ContainsKey("$DYNAMIC$"))
+				using BlockTable blockTable = transaction.GetObject(blockId.Database.BlockTableId, OpenMode.ForRead) as BlockTable;
+
+				foreach (ObjectId objectId in blockReferences)
 				{
-					using BlockTable blockTable = transaction.GetObject(blockId.Database.BlockTableId, OpenMode.ForRead) as BlockTable;
+					using BlockReference blockReference = transaction.GetObject(objectId, OpenMode.ForRead) as BlockReference;
 
-					foreach (ObjectId objectId in blockReferences)
+					if (blockReference.IsDynamicBlock)
 					{
-						using BlockReference blockReference = transaction.GetObject(objectId, OpenMode.ForRead) as BlockReference;
+						blockReference.UpgradeOpen();
 
-						if (blockReference.IsDynamicBlock)
+						using DynamicBlockReferencePropertyCollection properties = blockReference.DynamicBlockReferencePropertyCollection;
+						for (int i = 0; i < properties.Count; i++)
 						{
-							blockReference.UpgradeOpen();
+							DynamicBlockReferenceProperty property = properties[i];
 
-							using DynamicBlockReferencePropertyCollection properties = blockReference.DynamicBlockReferencePropertyCollection;
-							for (int i = 0; i < properties.Count; i++)
+							try
 							{
-								DynamicBlockReferenceProperty property = properties[i];
-
-								try
+								if (!property.ReadOnly && AttributeKeys.ContainsKey(property.PropertyName))
 								{
-									if (!property.ReadOnly && AttributeKeys.ContainsKey(property.PropertyName))
+									DynamicBlockReferencePropertyUnitsType type = property.UnitsType;
+									if (type == DynamicBlockReferencePropertyUnitsType.NoUnits)
 									{
-										DynamicBlockReferencePropertyUnitsType type = property.UnitsType;
-										if (type == DynamicBlockReferencePropertyUnitsType.NoUnits)
-										{
-											property.Value = AttributeKeys[property.PropertyName];
-										}
-										else
-										{
-											property.Value = double.Parse(AttributeKeys[property.PropertyName]);
-										}
+										property.Value = AttributeKeys[property.PropertyName];
+									}
+									else
+									{
+										property.Value = double.Parse(AttributeKeys[property.PropertyName]);
 									}
 								}
-								catch (System.Exception ex) { }
 							}
+							catch (System.Exception ex) { _ = ex; }
 						}
 					}
 				}
@@ -735,6 +752,46 @@ namespace ACADE_Utilities
 				attributes["LINKTERM"] = new(1000, Guid.NewGuid().ToString().ToUpper());
 				blockReference.SetAttributes(attributes);
 			}
+		}
+
+		/// <summary>
+		/// Find and replace block markers with another circuit.
+		/// </summary>
+		/// <param name="block">The block name to be used as a marker.</param>
+		/// <param name="id">The ID attribute to match.</param>
+		/// <param name="circuit">The circuit to put in place of the block marker.</param>
+		public void InsertSubCircuit(string block, string id, AeCircuit circuit)
+		{
+			bool started = blockId.Database.GetOrStartTransaction(out Transaction transaction);
+			using Disposable disposable = new(() => { transaction.Finish(); }, started);
+
+			foreach (ObjectId objectId in blockReferences)
+			{
+				using BlockReference blockReference = transaction.GetObject(objectId, OpenMode.ForRead) as BlockReference;
+
+				// Continue with next block reference if match fails
+				if (!BlockReference.GetEffectiveName().Equals(block, StringComparison.OrdinalIgnoreCase))
+					continue;
+
+				Dictionary<string, Attrib> attributes = blockReference.GetAttributes();
+
+				// Continue with next block reference if match fails
+				if (!(attributes.ContainsKey("ID") && attributes["ID"].Text.Equals(id, StringComparison.OrdinalIgnoreCase)))
+					continue;
+
+				Point3d insertionPoint = blockReference.Position;
+
+				// Remove block marker
+				blockReference.UpgradeOpen();
+				blockReference.Erase();
+
+				// Add new circuit in place of marker
+				using BlockTableRecord blockTableRecord = transaction.GetObject(blockId, OpenMode.ForWrite) as BlockTableRecord;
+				using BlockReference insertCircuit = new(insertionPoint, circuit.blockId);
+				blockTableRecord.AppendEntity(insertCircuit);
+			}
+
+			UpdateCircuitSort(this);
 		}
 
 		private string FindAndReplace(string value, Dictionary<string, string> keys)
