@@ -315,7 +315,11 @@ namespace ACADE_Utilities
 
 			for (int i = 0; i <= addition.Length; i++)
 			{
-				char character = characters[i];
+				char character;
+				if (i < characters.Length)
+					character = characters[i];
+				else
+					character = '0';
 
 				if (i == addition.Length)
 				{
@@ -362,6 +366,25 @@ namespace ACADE_Utilities
 
 				// convert character to number and add number and overflow
 				add = (int)(character - offset) + add + overflow;
+
+				if (i >= characters.Length)
+				{
+					if (add == 0)
+					{
+						continue;
+					}
+					else
+					{
+						List<char> list = characters.ToList();
+
+						int length = i - characters.Length;
+						for (int j = 0; j <= length; j++)
+						{
+							list.Insert(list.Count, '0');
+						}
+						characters = list.ToArray();
+					}
+				}
 
 				int[] added;
 				if (numeric)
